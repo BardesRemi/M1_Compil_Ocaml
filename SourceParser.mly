@@ -27,10 +27,11 @@
 %token BEGIN END
 %token EOF
 
-%left EQUAL NEQ LE LT GE GT
-%left PLUS MINUS
 %left OR
 %left AND
+%left EQUAL NEQ
+%left LE LT GE GT
+%left PLUS MINUS
 %left STAR DIV MOD
 %right NOT UMINUS
 %left SEMI
@@ -112,7 +113,6 @@ localised_expression:
 (* Expressions *)
 expression:
 (* Si pas d'exression, on renvoie une erreur *)
-| (* empty *) { failwith "Parser: No expression" }
 | i=CONST_INT { Literal (Int i) }
 | b=CONST_BOOL { Literal (Bool b) } 
 | id=IDENT { Location (Identifier (Id id)) }
