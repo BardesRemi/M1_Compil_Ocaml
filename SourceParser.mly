@@ -4,6 +4,15 @@
   open Lexing
   open CommonAST
   open SourceLocalisedAST
+
+  let add_vars tbl typ vars = 
+	let rec add_vars_rec table var_list =
+  		match var_list with
+		| [] -> table
+		| x::s -> add_vars_rec (Symb_Tbl.add x typ table) s	
+	in
+	add_vars_rec tbl vars
+
   
 %}
 
@@ -21,7 +30,7 @@
 %token INTEGER BOOLEAN
 
 %token MAIN
-%token IF ELSE WHILE FOR
+%token IF ELSE ELIF WHILE FOR
 %token SEMI COMMA
 %token SET PRINT
 %token BEGIN END
@@ -65,8 +74,13 @@ prog:
 var_decls:
 (* Si pas de déclaration, on renvoie la table vide. *)
 | (* empty *)  { Symb_Tbl.empty }
-| VAR; INTEGER; id=IDENT; SEMI; vars=var_decls { Symb_Tbl.add id TypInt vars }
-| VAR; BOOLEAN; id=IDENT; SEMI; vars=var_decls { Symb_Tbl.add id TypBool vars }	     
+| VAR; INTEGER; vars_list=multiple_vars; vars=var_decls { add_vars vars TypInt vars_list }
+| VAR; BOOLEAN; vars_list=multiple_vars; vars=var_decls { add_vars vars TypBool vars_list }
+;
+
+multiple_vars:
+| id=IDENT; SEMI { [id] }
+| id=IDENT; COMMA; vars=multiple_vars { id::vars }
 ;
 
 (* Bloc de code principal, formé du mot-clé [main] suivi par le bloc
@@ -98,11 +112,27 @@ instruction:
 | CONTINUE { Continue }
 | PRINT; LP; e=localised_expression; RP { Print(e) }
 | id=IDENT; SET; e=localised_expression { Set(Identifier (Id id), e) }
+| id=IDENT; COMMA; ma=mult_affect { Sequence(ma) }
+| IF; LP; e=localised_expression; RP; i=block { Conditional(e, i, mk_instr Nop 0 0) }
+| IF; LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional { Conditional(e, i, cc) }
 | IF; LP; e=localised_expression; RP; i1=block; ELSE; i2=block { Conditional(e, i1, i2) }
 | WHILE; LP; e=localised_expression; RP; i=block { Loop(e, i) }
 | FOR; LP; i1=localised_instruction; COMMA; e=localised_expression; COMMA; i2=localised_instruction; RP; i3=block { ForLoop(i1, e, i2, i3) }
 | i1=localised_instruction; SEMI; i2=localised_instruction { Sequence(i1, i2) }
 ;
+
+mult_affect:
+| id=IDENT, COMMA { }
+
+cascade_conditional:
+| LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional 
+	{ let instr = Conditional(e, i, cc) in
+	  let (a, b) = e.e_pos in	
+	  mk_instr instr a b }
+| LP; e=localised_expression; RP; i1=block; ELSE; i2=block 
+	{ let instr = Conditional(e, i1, i2) in
+	  let (a, b) = e.e_pos in	
+	  mk_instr instr a b }
 
 localised_expression:
 | e=expression { let l = $startpos.pos_lnum in

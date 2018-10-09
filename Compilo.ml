@@ -22,12 +22,14 @@ let preproc pp =
      let output_file = (Filename.chop_suffix file ".cid") ^ ".pp.cid" in
      Preprocessor.preprocessor output_file lb;
      open_in output_file
+       
   | false -> c
      
 
 let () =
   let c  = preproc !preprocessing in
-  let lb = Lexing.from_channel c in 
+  let lb = Lexing.from_channel c in
+  Printf.printf "Preprocesseur fini \n";
   let prog = SourceParser.prog SourceLexer.token lb in
   close_in c;
   let _ = SourceTypeChecker.typecheck_program prog in

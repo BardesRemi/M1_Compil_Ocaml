@@ -15,6 +15,7 @@
 	"print", PRINT;
 	"if", IF;
 	"else", ELSE;
+    "elif", ELIF;
 	"integer", INTEGER;
 	"boolean", BOOLEAN;
 	"var", VAR;

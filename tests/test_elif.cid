@@ -1,0 +1,16 @@
+var integer i,a, j;
+
+main {
+    i := 1;
+    j := 2;
+    if(i == 5000){
+        print(j)
+    } elif (i == 3){
+        print(i+j)
+    } elif (j == 3){
+        print(i)
+    } else { 
+        print(j*(j+i))
+    };
+    print(i)
+}

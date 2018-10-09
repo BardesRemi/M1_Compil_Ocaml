@@ -35,7 +35,7 @@ let number = ['1'-'9']['0'-'9']* | '0'
 rule read output = parse
   (* On repère une définition de macro *)
   | "#DEFINE "
-      { Printf.printf "# Define touvé "; macro_name output lexbuf }
+      { macro_name output lexbuf }
   (* On repère une macro dans la partie main *)
   | "#"
       { macro_search_name output lexbuf }
