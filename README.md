@@ -21,4 +21,25 @@ Aucun
 
 Aucun
 
+# Rendu numéro 2 - Projet Compilation - Rémi Bardes, Nicolas Devatine
 
+09/28/18 -> 10/10/18
+	
+## Travail effectué :
+
+### Sujet 2.1 :
+
+* Travail attendu effectué en totalité
+* Extensions : Messages d'erreur, Commentaires longs, Préprocesseur (Macros constantes, Macros avec arguments, Macros contenant d'autres macros)
+	
+### Sujet 2 .2 :
+* Travail attendu effectué en totalité
+* Extensions : Sucre syntaxique (tout)
+
+## Travail entamé mais non fonctionnel :
+
+Aucun
+
+## Travail emprunté :
+
+Aucun
