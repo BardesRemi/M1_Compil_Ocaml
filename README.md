@@ -24,6 +24,9 @@ Aucun
 # Rendu numéro 2 - Projet Compilation - Rémi Bardes, Nicolas Devatine
 
 09/28/18 -> 10/10/18
+
+Etant donné que nous n'avons pas forcé la première instructions du "FOR" à être une affectation simple, ça peut donc être n'importe quelle instruction. Cela génère un conflit avec notre implémentation de l'extension "x,y := e1,e2;" car les firgules présentes dans cette nouvelles instructions déclenche un conflit avec les virgules du FOR.
+Nous avons donc pris la décision de changer la syntaxe du FOR en remplaçant les virgules par des points virgules.
 	
 ## Travail effectué :
 
