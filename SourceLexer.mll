@@ -103,6 +103,8 @@ rule token = parse
       { SEMI }
   | ","
       { COMMA }
+  | "="
+      { SEQUAL }  
   (* Fin de fichier *)
   | eof
       { EOF }

@@ -37,11 +37,11 @@ Nous avons donc pris la décision de changer la syntaxe du FOR en remplaçant le
 	
 ### Sujet 2 .2 :
 * Travail attendu effectué en totalité
-* Extensions : Sucre syntaxique (tout)
+* Extensions : Sucre syntaxique sauf affectation simultanée (incomplète)
 
 ## Travail entamé mais non fonctionnel :
 
-Aucun
+Dans l'extension "sucre syntaxique" pour l'affectation simultanée le cas x, y := y, x rend : x := y / y := x (qui vaut y)
 
 ## Travail emprunté :
 

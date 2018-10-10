@@ -1,19 +1,15 @@
 var integer i;
-var integer i = 1, j = 2, l = i;
-
-var integer i, j, l;
-i := 1;
-j := 2;
-l := i;
-
-var integer i, j = 10;
-
-x, y := y, x
-x := y
-y := x
+var integer j;
+var integer a;
+var integer b;
 
 main {
-  for(i := 0 , i < 5, i := i+1){
+  a := 1;
+  b := 2;
+  a, b := b, a;
+  print(a);
+  print(b);
+  for(i := 0 ; i < 5; i := i+1){
     print(i)
   };
 }

@@ -1,8 +1,9 @@
-var integer i,a, j;
+var integer i,a;
+var integer j=2*5+5;
+var boolean c=true;
 
 main {
-    i := 1;
-    j := 2;
+    i := true;
     if(i == 5000){
         print(j)
     } elif (i == 3){
@@ -12,5 +13,5 @@ main {
     } else { 
         print(j*(j+i))
     };
-    print(i)
+    print(j)
 }

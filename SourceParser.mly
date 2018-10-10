@@ -12,8 +12,27 @@
 		| x::s -> add_vars_rec (Symb_Tbl.add x typ table) s	
 	in
 	add_vars_rec tbl vars
+ 
+  (*let add_vars tbl typ vars = List.fold_left (fun acc x -> Symb_Tbl.add x typ acc) tbl vars *)
 
-  
+  let rec instruction_list l = 
+    match l with
+    | [] -> mk_instr Nop 0 0
+    | x::n -> mk_instr (Sequence(x, instruction_list n)) (fst x.i_pos) (snd x.i_pos)
+ 
+  let affect_sequence ids exprs =
+    let rec affect_sequence_localised ids exprs =
+      match ids, exprs with 
+      | id::[],e::[] -> mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos)
+      | id1::id2::[], e1::e2::[] -> mk_instr (Sequence((mk_instr (Set(Identifier (Id id1), e1)) (fst e1.e_pos) (snd e1.e_pos)), (mk_instr (Set(Identifier (Id id2), e2)) (fst e1.e_pos) (snd e1.e_pos)))) (fst e1.e_pos) (snd e1.e_pos)
+      | [], e::s -> failwith (Printf.sprintf "Syntax error : more expressions than identifiers at %d, %d" (fst e.e_pos) (snd e.e_pos))
+      | id::s, [] -> failwith (Printf.sprintf "Syntax error : more identifiers than expressions")
+      | id::s1, e::s2 -> mk_instr (Sequence(mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos), affect_sequence_localised s1 s2)) (fst e.e_pos) (snd e.e_pos)
+      | _, _ -> failwith (Printf.sprintf "Syntax error")
+    in
+    match ids, exprs with
+      | id::s1, e::s2 -> Sequence(mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos), affect_sequence_localised s1 s2)
+      | _, _ -> failwith (Printf.sprintf "Syntax error")
 %}
 
 (* Définition des lexèmes *)
@@ -22,6 +41,7 @@
 %token <string> IDENT
 %token PLUS MINUS STAR DIV MOD
 %token EQUAL NEQ LE LT GE GT
+%token SEQUAL
 %token AND OR NOT
 %token LP RP
 %token BREAK CONTINUE
@@ -58,8 +78,8 @@ prog:
 | vars=var_decls; main=main; EOF
   (* Les déclarations de variables donnent une table des symboles, à laquelle
      est ajoutée la variable spéciale [arg] (avec le type entier). *)
-  { { main = main;
-      globals = Symb_Tbl.add "arg" TypInt vars; } }
+  { { main = mk_instr (Sequence(instruction_list (snd vars), main)) (fst main.i_pos) (snd main.i_pos);
+      globals = Symb_Tbl.add "arg" TypInt (fst vars); } }
   
 (* Aide : ajout d'une règle pour récupérer grossièrement les erreurs se 
    propageant jusqu'à la racine. *)
@@ -73,11 +93,11 @@ prog:
 (* Séquence de déclaration de variables *)
 var_decls:
 (* Si pas de déclaration, on renvoie la table vide. *)
-| (* empty *)  { Symb_Tbl.empty }
-| VAR; INTEGER; vars_list=multiple_vars; vars=var_decls { add_vars vars TypInt vars_list }
-| VAR; INTEGER; id=IDENT; SEQUAL; i=CONST_INT; SEMI; vars=var_decls { Symb_Tbl.add id TypInt var_decls }
-| VAR; BOOLEAN; vars_list=multiple_vars; vars=var_decls { add_vars vars TypBool vars_list }
-| VAR; BOOLEAN; id=IDENT; SEQUAL; i=CONST_BOOL; SEMI; vars=var_decls { Symb_Tbl.add id TypBool var_decls }
+| (* empty *)  { (Symb_Tbl.empty, []) }
+| VAR; INTEGER; vars_list=multiple_vars; vars=var_decls { (add_vars (fst vars) TypInt vars_list, (snd vars)) }
+| VAR; INTEGER; id=IDENT; SEQUAL; e=localised_expression; SEMI; vars=var_decls { (Symb_Tbl.add id TypInt (fst vars), (mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos))::(snd vars)) }
+| VAR; BOOLEAN; vars_list=multiple_vars; vars=var_decls { (add_vars (fst vars) TypBool vars_list, (snd vars)) }
+| VAR; BOOLEAN; id=IDENT; SEQUAL; e=localised_expression; SEMI; vars=var_decls { (Symb_Tbl.add id TypBool (fst vars), (mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos))::(snd vars)) }
 ;
 
 multiple_vars:
@@ -107,24 +127,35 @@ localised_instruction:
 ;
 
 (* Instructions *)
-instruction:
+instruction: 
 (* Si pas d'instruction, on renvoie l'instruction neutre. *)
 | (* empty *)  { Nop }
 | BREAK { Break }
 | CONTINUE { Continue }
 | PRINT; LP; e=localised_expression; RP { Print(e) }
 | id=IDENT; SET; e=localised_expression { Set(Identifier (Id id), e) }
-| id=IDENT; COMMA; ma=mult_affect { Sequence(ma) }
+| ids=ident_list; SET; e_list=expr_list { affect_sequence ids e_list }
 | IF; LP; e=localised_expression; RP; i=block { Conditional(e, i, mk_instr Nop 0 0) }
 | IF; LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional { Conditional(e, i, cc) }
 | IF; LP; e=localised_expression; RP; i1=block; ELSE; i2=block { Conditional(e, i1, i2) }
 | WHILE; LP; e=localised_expression; RP; i=block { Loop(e, i) }
-| FOR; LP; i1=localised_instruction; COMMA; e=localised_expression; COMMA; i2=localised_instruction; RP; i3=block { ForLoop(i1, e, i2, i3) }
+| FOR; LP; i1=localised_instruction; SEMI; e=localised_expression; SEMI; i2=localised_instruction; RP; i3=block { ForLoop(i1, e, i2, i3) }
 | i1=localised_instruction; SEMI; i2=localised_instruction { Sequence(i1, i2) }
 ;
 
-mult_affect:
-| id=IDENT, COMMA { }
+ident_list:
+| id=IDENT; COMMA; id_list=ids { id::id_list }
+
+ids:
+| id=IDENT { [id] }
+| id=IDENT; COMMA; id_list=ids { id::id_list }
+
+expr_list:
+| e=localised_expression; COMMA; e_list=exprs { e::e_list }
+
+exprs:
+| e=localised_expression { [e] }
+| e=localised_expression; COMMA; e_list=exprs { e::e_list }
 
 cascade_conditional:
 | LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional 
