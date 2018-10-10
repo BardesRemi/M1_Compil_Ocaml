@@ -75,7 +75,9 @@ var_decls:
 (* Si pas de déclaration, on renvoie la table vide. *)
 | (* empty *)  { Symb_Tbl.empty }
 | VAR; INTEGER; vars_list=multiple_vars; vars=var_decls { add_vars vars TypInt vars_list }
+| VAR; INTEGER; id=IDENT; SEQUAL; i=CONST_INT; SEMI; vars=var_decls { Symb_Tbl.add id TypInt var_decls }
 | VAR; BOOLEAN; vars_list=multiple_vars; vars=var_decls { add_vars vars TypBool vars_list }
+| VAR; BOOLEAN; id=IDENT; SEQUAL; i=CONST_BOOL; SEMI; vars=var_decls { Symb_Tbl.add id TypBool var_decls }
 ;
 
 multiple_vars:
