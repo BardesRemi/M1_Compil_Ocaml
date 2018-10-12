@@ -15,7 +15,7 @@
 	"print", PRINT;
 	"if", IF;
 	"else", ELSE;
-    "elif", ELIF;
+	"elif", ELIF;
 	"integer", INTEGER;
 	"boolean", BOOLEAN;
 	"var", VAR;
@@ -23,6 +23,7 @@
 	"false", CONST_BOOL(false);
 	"continue", CONTINUE;
 	"break", BREAK;
+	"new", NEW;
       ] ;
     fun s ->
       (* On cherche la chaîne [s] dans la table. Si on trouve un mot-clé alors
@@ -104,7 +105,11 @@ rule token = parse
   | ","
       { COMMA }
   | "="
-      { SEQUAL }  
+      { SEQUAL }
+  | "["
+      { LB }
+  | "]"
+      { RB }
   (* Fin de fichier *)
   | eof
       { EOF }

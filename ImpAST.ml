@@ -5,9 +5,11 @@ type expression =
   | Location of location
   | UnaryOp  of unaryOp  * expression
   | BinaryOp of binaryOp * expression * expression
+  | NewBlock of expression
 
 and location =
   | Identifier  of identifier
+  | BlockAccess of expression * expression
 
 
 type instruction =

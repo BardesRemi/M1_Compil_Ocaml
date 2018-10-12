@@ -38,6 +38,10 @@ let rec translate_expression (e: GotoAST.expression) = match e with
   | GotoAST.Location (Identifier(Id name)) ->
      la t0 name
      @@ lw t0 0(t0)
+  | GotoAST.Location (BlockAccess(e1, e2)) ->
+     translate_expression e1
+     @@ push t0
+     translate
   | GotoAST.UnaryOp (Minus, e) ->
      translate_expression e
      @@ neg t0 t0
@@ -128,6 +132,16 @@ let rec translate_expression (e: GotoAST.expression) = match e with
      @@ translate_expression e2
      @@ pop t1
      @@ or_ t0 t1 t0
+  | GotoAST.NewBlock(e) ->
+     translate_expression e
+     @@ addi t1 t0 1
+     @@ move a0 t1
+     @@ li t1 4
+     @@ mul a0 a0 t1
+     @@ li v0 9
+     @@ syscall
+     @@ sw t0 0(v0)
+     @@ addi t0 v0 4 (* $t0 <- adresse du premier champ *)
 
 (**
    Fonction de traduction des locations.
@@ -136,7 +150,8 @@ let rec translate_expression (e: GotoAST.expression) = match e with
 and translate_location = function
 | GotoAST.Identifier(Id name) ->
      la t0 name
-
+| GotoAST.BlockAccess(e1, e2) ->
+     
        
 (**
    Fonction de traduction des instructions.

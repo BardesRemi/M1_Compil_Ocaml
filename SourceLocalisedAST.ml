@@ -10,9 +10,11 @@ and expression =
   | Location of location
   | UnaryOp  of unaryOp  * localised_expression
   | BinaryOp of binaryOp * localised_expression * localised_expression
+  | NewArray of localised_expression * typ
 
 and location =
   | Identifier  of identifier
+  | ArrayAccess of localised_expression * localised_expression
 
 let mk_expr expr l c = { expr = expr; e_pos = l, c }
 

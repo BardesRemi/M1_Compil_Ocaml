@@ -6,6 +6,7 @@ module Symb_Tbl = Map.Make(String)
 type typ =
   | TypInt
   | TypBool
+  | TypArray of typ
     
 type type_context = {
   identifier_types: typ Symb_Tbl.t;

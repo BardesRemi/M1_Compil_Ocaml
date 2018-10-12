@@ -88,8 +88,11 @@ and translate_expression = function
   | Imp.UnaryOp (op, e) -> Gto.UnaryOp(op, translate_expression e)
   | Imp.BinaryOp (op, Imp.Literal l1, Imp.Literal l2) -> Gto.BinaryOp(op, Gto.Literal l1, Gto.Literal l2) (* Gestion des expressions arithmétiques constantes de manière optimisé *)
   | Imp.BinaryOp (op, e1, e2) -> Gto.BinaryOp(op, translate_expression e1, translate_expression e2)
+  | Imp.NewBlock(e) -> Gto.NewBlock(translate_expression e)
+    
 and translate_location = function
   | Imp.Identifier id -> Gto.Identifier(id)
+  | Imp.BlockAccess (e1, e2) -> Gto.BlockAccess(translate_expression e1, translate_expression e2)
      
 let translate_program p = Gto.({
   main = translate_instruction Imp.(p.main);

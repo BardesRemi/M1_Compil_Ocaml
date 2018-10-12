@@ -24,14 +24,17 @@
     let rec affect_sequence_localised ids exprs =
       match ids, exprs with 
       | id::[],e::[] -> mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos)
-      | id1::id2::[], e1::e2::[] -> mk_instr (Sequence((mk_instr (Set(Identifier (Id id1), e1)) (fst e1.e_pos) (snd e1.e_pos)), (mk_instr (Set(Identifier (Id id2), e2)) (fst e1.e_pos) (snd e1.e_pos)))) (fst e1.e_pos) (snd e1.e_pos)
+      | id1::id2::[], e1::e2::[] -> mk_instr (Sequence((mk_instr (Set(Identifier (Id id1), e1)) (fst e1.e_pos) (snd e1.e_pos)),
+						       (mk_instr (Set(Identifier (Id id2), e2)) (fst e1.e_pos) (snd e1.e_pos)))) (fst e1.e_pos) (snd e1.e_pos)
       | [], e::s -> failwith (Printf.sprintf "Syntax error : more expressions than identifiers at %d, %d" (fst e.e_pos) (snd e.e_pos))
       | id::s, [] -> failwith (Printf.sprintf "Syntax error : more identifiers than expressions")
-      | id::s1, e::s2 -> mk_instr (Sequence(mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos), affect_sequence_localised s1 s2)) (fst e.e_pos) (snd e.e_pos)
+      | id::s1, e::s2 -> mk_instr (Sequence(mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos),
+					    affect_sequence_localised s1 s2)) (fst e.e_pos) (snd e.e_pos)
       | _, _ -> failwith (Printf.sprintf "Syntax error")
     in
     match ids, exprs with
-      | id::s1, e::s2 -> Sequence(mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos), affect_sequence_localised s1 s2)
+    | id::s1, e::s2 -> Sequence(mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos),
+				affect_sequence_localised s1 s2)
       | _, _ -> failwith (Printf.sprintf "Syntax error")
 %}
 
@@ -43,7 +46,7 @@
 %token EQUAL NEQ LE LT GE GT
 %token SEQUAL
 %token AND OR NOT
-%token LP RP
+%token LP RP LB RB
 %token BREAK CONTINUE
 
 %token VAR
@@ -55,6 +58,7 @@
 %token SET PRINT
 %token BEGIN END
 %token EOF
+%token NEW
 
 %left OR
 %left AND
@@ -94,10 +98,8 @@ prog:
 var_decls:
 (* Si pas de déclaration, on renvoie la table vide. *)
 | (* empty *)  { (Symb_Tbl.empty, []) }
-| VAR; INTEGER; vars_list=multiple_vars; vars=var_decls { (add_vars (fst vars) TypInt vars_list, (snd vars)) }
-| VAR; INTEGER; id=IDENT; SEQUAL; e=localised_expression; SEMI; vars=var_decls { (Symb_Tbl.add id TypInt (fst vars), (mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos))::(snd vars)) }
-| VAR; BOOLEAN; vars_list=multiple_vars; vars=var_decls { (add_vars (fst vars) TypBool vars_list, (snd vars)) }
-| VAR; BOOLEAN; id=IDENT; SEQUAL; e=localised_expression; SEMI; vars=var_decls { (Symb_Tbl.add id TypBool (fst vars), (mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos))::(snd vars)) }
+| VAR; t=typ; vars_list=multiple_vars; vars=var_decls { (add_vars (fst vars) t vars_list, (snd vars)) }
+| VAR; t=typ; id=IDENT; SEQUAL; e=localised_expression; SEMI; vars=var_decls { (Symb_Tbl.add id t (fst vars), (mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos))::(snd vars)) }
 ;
 
 multiple_vars:
@@ -115,6 +117,11 @@ main:
 block:
 | BEGIN; i=localised_instruction; END { i }
 ;
+
+typ:
+| INTEGER { TypInt }
+| BOOLEAN { TypBool }
+| t=typ; LB; RB { TypArray(t) }
 
 (* Instruction localisée : on mémorise les numéros de ligne et de colonne du
    début de l'instruction.
@@ -179,9 +186,11 @@ expression:
 | i=CONST_INT { Literal (Int i) }
 | b=CONST_BOOL { Literal (Bool b) } 
 | id=IDENT { Location (Identifier (Id id)) }
+| e1=localised_expression; LB; e2=localised_expression; RB { Location (ArrayAccess (e1, e2)) }
 | LP; e=localised_expression; RP { e.expr }
 | MINUS; e=localised_expression %prec UMINUS { UnaryOp(Minus, e) }
 | NOT; e=localised_expression { UnaryOp(Not, e) }
+| NEW; t=typ; LB; e=localised_expression; RB { NewArray(e, t) }
 | e1=localised_expression; PLUS; e2=localised_expression { BinaryOp(Add, e1, e2) }
 | e1=localised_expression; MINUS; e2=localised_expression { BinaryOp(Sub, e1, e2) }
 | e1=localised_expression; STAR; e2=localised_expression { BinaryOp(Mult, e1, e2) }

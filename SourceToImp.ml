@@ -18,8 +18,10 @@ and strip_expression i = match Src.(i.expr) with
   | Src.Location loc -> Imp.Location(strip_location loc)
   | Src.UnaryOp (op, e) -> Imp.UnaryOp(op, strip_expression e)
   | Src.BinaryOp (op, e1, e2) -> Imp.BinaryOp(op, strip_expression e1, strip_expression e2)
+  | Src.NewArray (e, t) -> Imp.NewBlock(strip_expression e)
 and strip_location i = match i with
   | Src.Identifier id -> Imp.Identifier(id)
+  | Src.ArrayAccess (e1, e2) -> Imp.BlockAccess(strip_expression e1, strip_expression e2)
       
 let strip_program p =
   let main = strip_instruction Src.(p.main) in

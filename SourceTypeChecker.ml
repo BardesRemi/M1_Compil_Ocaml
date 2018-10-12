@@ -15,6 +15,12 @@ let rec check_type context pos e ty =
 and type_expression context e = match e.expr with
   | Literal l -> type_literal l
   | Location(Identifier(Id name)) -> Symb_Tbl.find name context.identifier_types
+  | Location (BlockAccess(e1, e2)) ->
+     begin
+       match (type_expression e1) with
+       | TypInt | TypBool -> failwith (Printf.sprintf "Type Array expected at position : (%d, %d)" (fst e.e_pos) (snd e.e_pos)) 
+       | TypArray(ty)     -> check_type context e.e_pos e2 TypInt; ty
+     end
   | UnaryOp (Minus, b) -> check_type context e.e_pos b TypInt; TypInt
   | UnaryOp (Not, b) ->  check_type context e.e_pos b TypBool; TypBool
   | BinaryOp (Add, b, c)
@@ -30,6 +36,7 @@ and type_expression context e = match e.expr with
   | BinaryOp (Gt, b, c)
   | BinaryOp (Ge, b, c) -> check_type context e.e_pos b TypInt; check_type context e.e_pos c TypInt; TypBool
   | BinaryOp (And, b, c) | BinaryOp (Or, b, c) -> check_type context e.e_pos b TypBool; check_type context e.e_pos c TypBool; TypBool
+  | NewArray(e_bis, ty) -> check_type context e.e_pos e_bis TypInt; TypArray(ty)
     
 let rec typecheck_instruction context i = match i.instr with
   | Print e -> check_type context i.i_pos e TypInt
