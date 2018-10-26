@@ -7,9 +7,11 @@ type typ =
   | TypInt
   | TypBool
   | TypArray of typ
+  | TypStruct of string
     
 type type_context = {
   identifier_types: typ Symb_Tbl.t;
+  struct_types: struct_typ Symb_Tbl.t;
 }
 
 type literal =

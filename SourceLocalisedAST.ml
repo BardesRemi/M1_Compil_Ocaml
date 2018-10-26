@@ -11,10 +11,12 @@ and expression =
   | UnaryOp  of unaryOp  * localised_expression
   | BinaryOp of binaryOp * localised_expression * localised_expression
   | NewArray of localised_expression * typ
+  | NewRecord of string
 
 and location =
   | Identifier  of identifier
   | ArrayAccess of localised_expression * localised_expression
+  | FieldAccess of localised_expression * string
 
 let mk_expr expr l c = { expr = expr; e_pos = l, c }
 
@@ -37,7 +39,12 @@ and instruction =
 
 let mk_instr instr l c = { instr = instr; i_pos = l, c }
 
+type struct_type = {
+  fields: (string * typ) list;
+}
+  
 type program = {
   main: localised_instruction;
   globals: typ Symb_Tbl.t;
+  structs: struct_type Symb_Tbl.t;
 }

@@ -50,11 +50,12 @@
 %token BREAK CONTINUE
 
 %token VAR
+%token STRUCT
 %token INTEGER BOOLEAN
 
 %token MAIN
 %token IF ELSE ELIF WHILE FOR
-%token SEMI COMMA
+%token SEMI COMMA DOT
 %token SET PRINT
 %token BEGIN END
 %token EOF
@@ -63,7 +64,7 @@
 %left OR
 %left AND
 %left EQUAL NEQ
-%left LE LT GE GT
+%left LE LT GE GT LB
 %left PLUS MINUS
 %left STAR DIV MOD
 %right NOT UMINUS
@@ -79,11 +80,12 @@
 prog:
 (* Règles : un programme est formé d'une séquence de déclarations de variables
    suivie du bloc de code principal. *)
-| vars=var_decls; main=main; EOF
+| structs=struct_decls; vars=var_decls; main=main; EOF
   (* Les déclarations de variables donnent une table des symboles, à laquelle
      est ajoutée la variable spéciale [arg] (avec le type entier). *)
   { { main = mk_instr (Sequence(instruction_list (snd vars), main)) (fst main.i_pos) (snd main.i_pos);
-      globals = Symb_Tbl.add "arg" TypInt (fst vars); } }
+      globals = Symb_Tbl.add "arg" TypInt (fst vars);
+      structs = structs } }
   
 (* Aide : ajout d'une règle pour récupérer grossièrement les erreurs se 
    propageant jusqu'à la racine. *)
@@ -107,6 +109,15 @@ multiple_vars:
 | id=IDENT; COMMA; vars=multiple_vars { id::vars }
 ;
 
+struct_decls:
+| (* empty *) { Symb_Tbl.empty }
+| STRUCT; id=IDENT; BEGIN; fields=field_decl; END; structs=struct_decls { Symb_Tbl.add id { fields = fields } structs  }
+;
+
+field_decl:
+| t=typ; id=IDENT; SEMI; fields=field_decl { (id, t)::fields }
+| t=typ; id=IDENT { [(id, t)] }
+
 (* Bloc de code principal, formé du mot-clé [main] suivi par le bloc
    proprement dit. *)
 main:
@@ -122,6 +133,7 @@ typ:
 | INTEGER { TypInt }
 | BOOLEAN { TypBool }
 | t=typ; LB; RB { TypArray(t) }
+| id=IDENT { TypStruct(id) }
 
 (* Instruction localisée : on mémorise les numéros de ligne et de colonne du
    début de l'instruction.
@@ -141,6 +153,7 @@ instruction:
 | CONTINUE { Continue }
 | PRINT; LP; e=localised_expression; RP { Print(e) }
 | id=IDENT; SET; e=localised_expression { Set(Identifier (Id id), e) }
+| e1=localised_expression; LB; e2=localised_expression ; RB; SET; e=localised_expression { Set(ArrayAccess(e1, e2), e) }
 | ids=ident_list; SET; e_list=expr_list { affect_sequence ids e_list }
 | IF; LP; e=localised_expression; RP; i=block { Conditional(e, i, mk_instr Nop 0 0) }
 | IF; LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional { Conditional(e, i, cc) }

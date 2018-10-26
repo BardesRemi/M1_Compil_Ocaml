@@ -41,7 +41,12 @@ let rec translate_expression (e: GotoAST.expression) = match e with
   | GotoAST.Location (BlockAccess(e1, e2)) ->
      translate_expression e1
      @@ push t0
-     translate
+     @@ translate_expression e2
+     @@ pop t1
+     @@ li t2 4
+     @@ mul t0 t0 t2
+     @@ add t1 t1 t0
+     @@ lw t0 0(t1)
   | GotoAST.UnaryOp (Minus, e) ->
      translate_expression e
      @@ neg t0 t0
@@ -151,6 +156,13 @@ and translate_location = function
 | GotoAST.Identifier(Id name) ->
      la t0 name
 | GotoAST.BlockAccess(e1, e2) ->
+   translate_expression e1
+   @@ push t0
+   @@ translate_expression e2
+   @@ pop t1
+   @@ li t2 4
+   @@ mul t0 t0 t2 
+   @@ add t0 t1 t0
      
        
 (**

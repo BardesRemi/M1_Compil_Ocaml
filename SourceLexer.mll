@@ -24,6 +24,7 @@
 	"continue", CONTINUE;
 	"break", BREAK;
 	"new", NEW;
+	"struct", STRUCT;
       ] ;
     fun s ->
       (* On cherche la chaîne [s] dans la table. Si on trouve un mot-clé alors
@@ -104,6 +105,8 @@ rule token = parse
       { SEMI }
   | ","
       { COMMA }
+  | "."
+      { DOT }
   | "="
       { SEQUAL }
   | "["

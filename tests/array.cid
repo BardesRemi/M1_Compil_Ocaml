@@ -4,7 +4,7 @@ var integer i;
 main {
   tab := new integer[arg+1];
   tab[0] := 1;
-  tab[1] := 1;
+  tab[1] := 9;
   i := 1;
   while (i < arg) {
     tab[i+1] := tab[i] + tab[i-1];
