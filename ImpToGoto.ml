@@ -97,4 +97,5 @@ and translate_location = function
 let translate_program p = Gto.({
   main = translate_instruction Imp.(p.main);
   globals = Imp.(p.globals);
+  structs = Imp.(p.structs);
 })

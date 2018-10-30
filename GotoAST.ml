@@ -25,4 +25,5 @@ let (++) i1 i2 = Sequence(i1, i2)
 type program = {
   main: instruction;
   globals: typ Symb_Tbl.t;
+  structs: struct_type Symb_Tbl.t;
 }

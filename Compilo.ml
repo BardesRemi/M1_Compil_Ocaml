@@ -32,8 +32,8 @@ let () =
   Printf.printf "Preprocesseur fini \n";
   let prog = SourceParser.prog SourceLexer.token lb in
   close_in c;
-  let _ = SourceTypeChecker.typecheck_program prog in
-  let prog = SourceToImp.strip_program prog in
+  let prog_type_context = SourceTypeChecker.typecheck_program prog in
+  let prog = SourceToImp.strip_program prog prog_type_context  in
   let prog = ImpToGoto.translate_program prog in
   let asm = GotoToMips.translate_program prog in
   let output_file = (Filename.chop_suffix file ".cid") ^ ".asm" in

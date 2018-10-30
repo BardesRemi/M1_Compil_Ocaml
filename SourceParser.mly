@@ -116,7 +116,7 @@ struct_decls:
 
 field_decl:
 | t=typ; id=IDENT; SEMI; fields=field_decl { (id, t)::fields }
-| t=typ; id=IDENT { [(id, t)] }
+| t=typ; id=IDENT; SEMI { [(id, t)] }
 
 (* Bloc de code principal, formé du mot-clé [main] suivi par le bloc
    proprement dit. *)
@@ -135,6 +135,17 @@ typ:
 | t=typ; LB; RB { TypArray(t) }
 | id=IDENT { TypStruct(id) }
 
+location:
+| id=IDENT { Identifier (Id id) }
+| e1=localised_expression; LB; e2=localised_expression ; RB { ArrayAccess(e1, e2) }
+| struct_id=location_structural_rec; DOT; field_id=IDENT { FieldAccess(struct_id, field_id) }
+;
+
+location_structural_rec:
+| id=IDENT; { (mk_expr (Location(Identifier(Id id))) 0 0) }
+| id=location_structural_rec; DOT; f=IDENT { mk_expr (Location(FieldAccess(id, f))) 0 0 }
+;
+   
 (* Instruction localisée : on mémorise les numéros de ligne et de colonne du
    début de l'instruction.
    Voir dans la doc la définition de [Lexing.position] pour la signification
@@ -152,8 +163,8 @@ instruction:
 | BREAK { Break }
 | CONTINUE { Continue }
 | PRINT; LP; e=localised_expression; RP { Print(e) }
-| id=IDENT; SET; e=localised_expression { Set(Identifier (Id id), e) }
-| e1=localised_expression; LB; e2=localised_expression ; RB; SET; e=localised_expression { Set(ArrayAccess(e1, e2), e) }
+| l=location; SET; e=localised_expression { Set(l, e) }
+| l=location; SET; NEW; id_struct=IDENT { Set(l, (mk_expr (NewRecord(id_struct)) 0 0)) }
 | ids=ident_list; SET; e_list=expr_list { affect_sequence ids e_list }
 | IF; LP; e=localised_expression; RP; i=block { Conditional(e, i, mk_instr Nop 0 0) }
 | IF; LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional { Conditional(e, i, cc) }
@@ -198,7 +209,7 @@ expression:
 (* Si pas d'exression, on renvoie une erreur *)
 | i=CONST_INT { Literal (Int i) }
 | b=CONST_BOOL { Literal (Bool b) } 
-| id=IDENT { Location (Identifier (Id id)) }
+| id=location { Location (id) }
 | e1=localised_expression; LB; e2=localised_expression; RB { Location (ArrayAccess (e1, e2)) }
 | LP; e=localised_expression; RP { e.expr }
 | MINUS; e=localised_expression %prec UMINUS { UnaryOp(Minus, e) }

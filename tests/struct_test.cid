@@ -1,0 +1,9 @@
+struct message { integer a; integer b; }
+struct channel { boolean lock; message m; }
+
+var channel c;
+
+main {
+  c := new channel;
+  c.lock := true; // cette ligne provoque une erreur
+}

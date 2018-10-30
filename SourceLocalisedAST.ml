@@ -38,10 +38,6 @@ and instruction =
   | Nop
 
 let mk_instr instr l c = { instr = instr; i_pos = l, c }
-
-type struct_type = {
-  fields: (string * typ) list;
-}
   
 type program = {
   main: localised_instruction;

@@ -8,10 +8,14 @@ type typ =
   | TypBool
   | TypArray of typ
   | TypStruct of string
+
+type struct_type = {
+  fields: (string * typ) list;
+}
     
 type type_context = {
   identifier_types: typ Symb_Tbl.t;
-  struct_types: struct_typ Symb_Tbl.t;
+  struct_types: struct_type Symb_Tbl.t;
 }
 
 type literal =

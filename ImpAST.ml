@@ -26,4 +26,5 @@ type instruction =
 type program = {
   main: instruction;
   globals: typ Symb_Tbl.t;
+  structs: struct_type Symb_Tbl.t;
 }

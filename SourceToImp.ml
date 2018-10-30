@@ -27,9 +27,9 @@ let strip_instruction_main type_context i =
   and strip_location i = match i with
     | Src.Identifier id -> Imp.Identifier(id)
     | Src.ArrayAccess (e1, e2) -> Imp.BlockAccess(strip_expression e1, strip_expression e2)
-    | Src.FieldAccess(e, f) -> Imp.BlockAccess(e, e)
+    | Src.FieldAccess(e, f) -> Imp.BlockAccess(strip_expression e, strip_expression e) (* A FAIRE *)
   in
-  strip_instruction
+  strip_instruction i
       
 let strip_program p type_context =
   let main = strip_instruction_main type_context Src.(p.main) in
