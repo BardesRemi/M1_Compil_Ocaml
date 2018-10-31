@@ -2,17 +2,17 @@ open CommonAST
 open SourceLocalisedAST
 
 exception Type_error of typ * typ * (int * int)
-
+    
 let type_literal = function
   | Int _ -> TypInt
   | Bool _ -> TypBool
-
+     
 let rec check_type context pos e ty =
   let t = type_expression context e in
   if t = ty
   then ()
   else raise (Type_error(ty, t, pos))
-
+    
 and type_location context l = match l with
   | Identifier(Id name) -> Symb_Tbl.find name context.identifier_types
   | ArrayAccess(e1, e2) ->
@@ -25,14 +25,16 @@ and type_location context l = match l with
      begin
        let s =
 	 match (type_expression context struct_id) with
-	 |TypStruct(name)  -> Symb_Tbl.find name context.struct_types
-	 |_                -> failwith (Printf.sprintf "Type Struct expected at position : (%d, %d)" (fst struct_id.e_pos) (snd struct_id.e_pos))
+	 | TypStruct(name)  -> Symb_Tbl.find name context.struct_types
+	 | _                -> failwith (Printf.sprintf "Type Struct expected at position : (%d, %d)" (fst struct_id.e_pos) (snd struct_id.e_pos))
        in
-       match (List.find_opt (fun x -> (fst x) = name) s.fields) with
-       |Some(f) -> snd f
-       |None    -> failwith (Printf.sprintf "Unknown field at position : (%d, %d)" (fst struct_id.e_pos) (snd struct_id.e_pos))
+       try
+	 let field = (List.find (fun x -> (fst x) = name) s.fields) in
+	 snd field
+       with
+       | Not_found -> failwith (Printf.sprintf "Unknown field at position : (%d, %d)" (fst struct_id.e_pos) (snd struct_id.e_pos))
      end
-    
+       
 and type_expression context e = match e.expr with
   | Literal l -> type_literal l
   | Location loc -> type_location context loc
@@ -52,26 +54,26 @@ and type_expression context e = match e.expr with
   | BinaryOp (Ge, b, c) -> check_type context e.e_pos b TypInt; check_type context e.e_pos c TypInt; TypBool
   | BinaryOp (And, b, c) | BinaryOp (Or, b, c) -> check_type context e.e_pos b TypBool; check_type context e.e_pos c TypBool; TypBool
   | NewArray(e_bis, ty) -> check_type context e.e_pos e_bis TypInt; TypArray(ty)
-  | NewRecord (name) -> TypStruct(name) 
-    
+  | NewRecord (name) -> let _ = Symb_Tbl.find name context.struct_types in TypStruct(name)
+									
 let rec typecheck_instruction context i = match i.instr with
   | Print e -> check_type context i.i_pos e TypInt
   | Set (l, e) -> check_type context i.i_pos e (type_location context l)
   | Conditional (e, i1, i2) ->
-     check_type context i.i_pos e TypBool;
-     typecheck_instruction context i1;
-     typecheck_instruction context i2
+    check_type context i.i_pos e TypBool;
+    typecheck_instruction context i1;
+    typecheck_instruction context i2
   | Loop (e, i) ->
-     check_type context i.i_pos e TypBool;
-     typecheck_instruction context i;
+    check_type context i.i_pos e TypBool;
+    typecheck_instruction context i;
   | ForLoop (i_init, e_cond, i_incr, i) ->
-     typecheck_instruction context i_init;
-     check_type context i.i_pos e_cond TypBool;
-     typecheck_instruction context i_incr;
-     typecheck_instruction context i
+    typecheck_instruction context i_init;
+    check_type context i.i_pos e_cond TypBool;
+    typecheck_instruction context i_incr;
+    typecheck_instruction context i
   | Sequence (i1, i2) ->
-     typecheck_instruction context i1;
-     typecheck_instruction context i2
+    typecheck_instruction context i1;
+    typecheck_instruction context i2
   | Break -> ()
   | Continue -> ()
   | Nop -> ()

@@ -1,6 +1,16 @@
 module Src = SourceLocalisedAST
 module Imp = ImpAST
 open CommonAST
+open SourceTypeChecker
+
+(* Donne la position du champ f dans la liste de champ l *)
+let find_pos l f =
+  let rec find_pos_rec l f c =
+    match l with
+    | [] -> failwith (Printf.sprintf "Unknown field")
+    | x::n -> if fst x = f then c else find_pos_rec n f (c+1)
+  in
+  find_pos_rec l f 0
 
 let strip_instruction_main type_context i =
   let rec strip_instruction i = match Src.(i.instr) with
@@ -27,7 +37,15 @@ let strip_instruction_main type_context i =
   and strip_location i = match i with
     | Src.Identifier id -> Imp.Identifier(id)
     | Src.ArrayAccess (e1, e2) -> Imp.BlockAccess(strip_expression e1, strip_expression e2)
-    | Src.FieldAccess(e, f) -> Imp.BlockAccess(strip_expression e, strip_expression e) (* A FAIRE *)
+    | Src.FieldAccess(e, f) ->
+       let typ = type_expression type_context e in
+       begin
+	 match typ with
+	 | TypStruct(name) -> let structure = Symb_Tbl.find name type_context.struct_types in
+			      let pos = find_pos structure.fields f in
+			      Imp.BlockAccess(strip_expression e, Imp.Literal(Int(pos)))
+	 | _ -> failwith (Printf.sprintf "Type Struct expected")
+       end
   in
   strip_instruction i
       

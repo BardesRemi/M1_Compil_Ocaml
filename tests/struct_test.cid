@@ -1,9 +1,28 @@
 struct message { integer a; integer b; }
 struct channel { boolean lock; message m; }
+struct tableau { integer[] a; }
 
 var channel c;
+var tableau t;
+var integer[] y;
 
 main {
   c := new channel;
-  c.lock := true; // cette ligne provoque une erreur
+  c.lock := true;
+  c.m := new message;
+  c.m.a := 79;
+  c.m.b := 107;
+  c.lock := false;
+  
+  t := new tableau;
+  t.a := new integer[5];
+  y := t.a;
+  y[0] := 1;
+  t.a := y;
+  y := t.a;
+  print(y[0]);
+
+  while (c.lock) {};
+  print(c.m.a);
+  print(c.m.b);
 }

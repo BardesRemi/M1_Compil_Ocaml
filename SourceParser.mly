@@ -13,7 +13,7 @@
 	in
 	add_vars_rec tbl vars
  
-  (*let add_vars tbl typ vars = List.fold_left (fun acc x -> Symb_Tbl.add x typ acc) tbl vars *)
+  (* let add_vars tbl typ vars = List.fold_left (fun acc x -> Symb_Tbl.add x typ acc) tbl vars *)
 
   let rec instruction_list l = 
     match l with
@@ -164,7 +164,6 @@ instruction:
 | CONTINUE { Continue }
 | PRINT; LP; e=localised_expression; RP { Print(e) }
 | l=location; SET; e=localised_expression { Set(l, e) }
-| l=location; SET; NEW; id_struct=IDENT { Set(l, (mk_expr (NewRecord(id_struct)) 0 0)) }
 | ids=ident_list; SET; e_list=expr_list { affect_sequence ids e_list }
 | IF; LP; e=localised_expression; RP; i=block { Conditional(e, i, mk_instr Nop 0 0) }
 | IF; LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional { Conditional(e, i, cc) }
@@ -215,6 +214,7 @@ expression:
 | MINUS; e=localised_expression %prec UMINUS { UnaryOp(Minus, e) }
 | NOT; e=localised_expression { UnaryOp(Not, e) }
 | NEW; t=typ; LB; e=localised_expression; RB { NewArray(e, t) }
+| NEW; id_struct=IDENT { NewRecord(id_struct) }
 | e1=localised_expression; PLUS; e2=localised_expression { BinaryOp(Add, e1, e2) }
 | e1=localised_expression; MINUS; e2=localised_expression { BinaryOp(Sub, e1, e2) }
 | e1=localised_expression; STAR; e2=localised_expression { BinaryOp(Mult, e1, e2) }
