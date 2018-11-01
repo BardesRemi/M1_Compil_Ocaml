@@ -80,12 +80,12 @@
 prog:
 (* Règles : un programme est formé d'une séquence de déclarations de variables
    suivie du bloc de code principal. *)
-| structs=struct_decls; vars=var_decls; main=main; EOF
+| decls=decls; main=main; EOF
   (* Les déclarations de variables donnent une table des symboles, à laquelle
      est ajoutée la variable spéciale [arg] (avec le type entier). *)
-  { { main = mk_instr (Sequence(instruction_list (snd vars), main)) (fst main.i_pos) (snd main.i_pos);
-      globals = Symb_Tbl.add "arg" TypInt (fst vars);
-      structs = structs } }
+  { { main = mk_instr (Sequence(instruction_list (snd (fst decls)), main)) (fst main.i_pos) (snd main.i_pos);
+      globals = Symb_Tbl.add "arg" TypInt (fst (fst decls));
+      structs = (snd decls) } }
   
 (* Aide : ajout d'une règle pour récupérer grossièrement les erreurs se 
    propageant jusqu'à la racine. *)
@@ -96,22 +96,18 @@ prog:
           failwith message }
 ;
 
-(* Séquence de déclaration de variables *)
-var_decls:
+(* Séquence de déclarations *)
+decls:
 (* Si pas de déclaration, on renvoie la table vide. *)
-| (* empty *)  { (Symb_Tbl.empty, []) }
-| VAR; t=typ; vars_list=multiple_vars; vars=var_decls { (add_vars (fst vars) t vars_list, (snd vars)) }
-| VAR; t=typ; id=IDENT; SEQUAL; e=localised_expression; SEMI; vars=var_decls { (Symb_Tbl.add id t (fst vars), (mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos))::(snd vars)) }
+| (* empty *)  { ((Symb_Tbl.empty, []), Symb_Tbl.empty) }
+| VAR; t=typ; vars_list=multiple_vars; decls=decls { ((add_vars (fst (fst decls)) t vars_list, (snd (fst decls))), (snd decls)) }
+| VAR; t=typ; id=IDENT; SEQUAL; e=localised_expression; SEMI; decls=decls { ((Symb_Tbl.add id t (fst (fst decls)), (mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos))::(snd (fst decls))), (snd decls)) }
+| STRUCT; id=IDENT; BEGIN; fields=field_decl; END; decls=decls { ((fst decls), Symb_Tbl.add id { fields = fields } (snd decls))  }
 ;
 
 multiple_vars:
 | id=IDENT; SEMI { [id] }
 | id=IDENT; COMMA; vars=multiple_vars { id::vars }
-;
-
-struct_decls:
-| (* empty *) { Symb_Tbl.empty }
-| STRUCT; id=IDENT; BEGIN; fields=field_decl; END; structs=struct_decls { Symb_Tbl.add id { fields = fields } structs  }
 ;
 
 field_decl:

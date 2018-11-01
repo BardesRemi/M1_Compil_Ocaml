@@ -1,9 +1,15 @@
+var channel c;
+
 struct message { integer a; integer b; }
+
+var tableau t;
+
 struct channel { boolean lock; message m; }
-struct tableau { integer[] a; }
 
 var channel c;
-var tableau t;
+
+struct tableau { integer[] a; }
+
 var integer[] y;
 
 main {
@@ -11,7 +17,7 @@ main {
   c.lock := true;
   c.m := new message;
   c.m.a := 79;
-  c.m.b := 107;
+  c.m.b := 108;
   c.lock := false;
   
   t := new tableau;
