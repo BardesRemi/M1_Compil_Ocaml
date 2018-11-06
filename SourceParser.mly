@@ -208,8 +208,7 @@ expression:
 | LP; e=localised_expression; RP { e.expr }
 | MINUS; e=localised_expression %prec UMINUS { UnaryOp(Minus, e) }
 | NOT; e=localised_expression { UnaryOp(Not, e) }
-| NEW; INTEGER; LB; e=localised_expression; RB { NewArray(e, TypInt) }
-| NEW; BOOLEAN; LB; e=localised_expression; RB { NewArray(e, TypBool) }
+| NEW; t=array_decl; LB; e=localised_expression; RB { NewArray(e, t) }
 | NEW; id_struct=IDENT { NewRecord(id_struct) }
 | e1=localised_expression; PLUS; e2=localised_expression { BinaryOp(Add, e1, e2) }
 | e1=localised_expression; MINUS; e2=localised_expression { BinaryOp(Sub, e1, e2) }
@@ -225,3 +224,8 @@ expression:
 | e1=localised_expression; AND; e2=localised_expression { BinaryOp(And, e1, e2) }
 | e1=localised_expression; OR; e2=localised_expression { BinaryOp(Or, e1, e2) }
 ;
+
+array_decl:
+| INTEGER { TypInt }
+| BOOLEAN { TypBool }
+| t=array_decl; LB; e=localised_expression; RB { TypArray(t) }
