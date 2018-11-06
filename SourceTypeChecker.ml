@@ -11,7 +11,10 @@ let rec check_type context pos e ty =
   let t = type_expression context e in
   if t = ty
   then ()
-  else raise (Type_error(ty, t, pos))
+  else begin
+    if t = TypInt then failwith (Printf.sprintf "TypInt")
+    else if t = TypBool then failwith (Printf.sprintf "TypBool")
+    else failwith (Printf.sprintf "TypArray/TypStruct") end (* Printf.printf "test"; raise (Type_error(ty, t, pos)) end *)
     
 and type_location context l = match l with
   | Identifier(Id name) -> Symb_Tbl.find name context.identifier_types
@@ -44,10 +47,10 @@ and type_expression context e = match e.expr with
   | BinaryOp (Sub, b, c)
   | BinaryOp (Mult, b, c)
   | BinaryOp (Div, b, c)
-  | BinaryOp (Mod, b, c) -> check_type context e.e_pos b TypInt; check_type context e.e_pos c TypInt; TypInt
+  | BinaryOp (Mod, b, c) -> check_type context e.e_pos c TypInt; TypInt
   | BinaryOp (Eq, b, c) | BinaryOp (Neq, b, c) -> let t1 = type_expression context b in
 						  let t2 = type_expression context c in
-						  if t1 = t2 then TypBool else raise (Type_error(t1, t2, e.e_pos)) 
+						  if t1 = t2 then TypBool else raise (Type_error(t1, t2, e.e_pos))
   | BinaryOp (Lt, b, c)
   | BinaryOp (Le, b, c)
   | BinaryOp (Gt, b, c)

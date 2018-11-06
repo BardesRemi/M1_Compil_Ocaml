@@ -43,7 +43,13 @@ let rec translate_expression (e: GotoAST.expression) = match e with
      @@ push t0
      @@ translate_expression e2
      @@ pop t1
+     (* On test si on est dans les bornes du tableaux *)
+     @@ subi t1 t1 4
+     @@ lw t2 0(t1) (* t2 <- la taille du tableaux *)
+     @@ ble t2 t0 "atoi_error"
+     @@ bltz t0 "atoi_error"
      @@ li t2 4
+     @@ addi t1 t1 4
      @@ mul t0 t0 t2 (* $t0 <- $t0*4 car taille mémoire d'une case = 4 *)
      @@ add t1 t1 t0 (* $t1 <- $t1*$t0 car t1 = adresse 1ere case du tableau / t0 = nbr de décalage necessaire pour l'indice du tableau *)
      @@ lw t0 0(t1)  
@@ -145,7 +151,7 @@ let rec translate_expression (e: GotoAST.expression) = match e with
      @@ mul a0 a0 t1 (* on multiplie par 4 cette taille #4= taille mémoire d'une case *)
      @@ li v0 9
      @@ syscall      (* on alloue la mémoire correspondance *)
-     @@ sw t0 0(v0)  (* $t0 <- adresse de l'en tete du tableau *)
+     @@ sw t0 0(v0)  (* on met dans l'en-tete t0 qui est la taille du tableau *)
      @@ addi t0 v0 4 (* $t0 <- adresse du premier champ *)
 
 (**
@@ -160,6 +166,12 @@ and translate_location = function
    @@ push t0
    @@ translate_expression e2
    @@ pop t1
+   (* On test si on est dans les bornes du tableaux *)
+   @@ subi t1 t1 4
+   @@ lw t2 0(t1) (* t2 <- la taille du tableaux *)
+   @@ ble t2 t0 "atoi_error"
+   @@ bltz t0 "atoi_error"
+   @@ addi t1 t1 4
    @@ li t2 4
    @@ mul t0 t0 t2 
    @@ add t0 t1 t0

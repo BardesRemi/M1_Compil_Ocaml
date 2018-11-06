@@ -133,7 +133,7 @@ typ:
 
 location:
 | id=IDENT { Identifier (Id id) }
-| e1=localised_expression; LB; e2=localised_expression ; RB { ArrayAccess(e1, e2) }
+| e1=location; LB; e2=localised_expression ; RB { ArrayAccess(mk_expr (Location(e1)) 0 0, e2) }
 | struct_id=location_structural_rec; DOT; field_id=IDENT { FieldAccess(struct_id, field_id) }
 ;
 
@@ -205,11 +205,11 @@ expression:
 | i=CONST_INT { Literal (Int i) }
 | b=CONST_BOOL { Literal (Bool b) } 
 | id=location { Location (id) }
-| e1=localised_expression; LB; e2=localised_expression; RB { Location (ArrayAccess (e1, e2)) }
 | LP; e=localised_expression; RP { e.expr }
 | MINUS; e=localised_expression %prec UMINUS { UnaryOp(Minus, e) }
 | NOT; e=localised_expression { UnaryOp(Not, e) }
-| NEW; t=typ; LB; e=localised_expression; RB { NewArray(e, t) }
+| NEW; INTEGER; LB; e=localised_expression; RB { NewArray(e, TypInt) }
+| NEW; BOOLEAN; LB; e=localised_expression; RB { NewArray(e, TypBool) }
 | NEW; id_struct=IDENT { NewRecord(id_struct) }
 | e1=localised_expression; PLUS; e2=localised_expression { BinaryOp(Add, e1, e2) }
 | e1=localised_expression; MINUS; e2=localised_expression { BinaryOp(Sub, e1, e2) }

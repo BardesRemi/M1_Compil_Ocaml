@@ -46,3 +46,25 @@ Dans l'extension "sucre syntaxique" pour l'affectation simultanée le cas x, y :
 ## Travail emprunté :
 
 Aucun
+
+# Rendu numéro 3 - Projet Compilation - Rémi Bardes, Nicolas Devatine
+
+10/11/18 -> 11/07/18
+
+
+## Travail effectué :
+
+### Sujet 3.1 :
+
+* Travail attendu effectué en totalité
+* Extensions : Sûreté : bornes des tableaux
+	
+### Sujet 3 .2 :
+* Travail attendu effectué en totalité
+* Extensions : Souplesse : entrelacer les déclarations
+
+## Travail entamé mais non fonctionnel :
+
+## Travail emprunté :
+
+Aucun
