@@ -44,9 +44,9 @@ let rec translate_expression (e: GotoAST.expression) = match e with
      @@ translate_expression e2
      @@ pop t1
      @@ li t2 4
-     @@ mul t0 t0 t2
-     @@ add t1 t1 t0
-     @@ lw t0 0(t1)
+     @@ mul t0 t0 t2 (* $t0 <- $t0*4 car taille mémoire d'une case = 4 *)
+     @@ add t1 t1 t0 (* $t1 <- $t1*$t0 car t1 = adresse 1ere case du tableau / t0 = nbr de décalage necessaire pour l'indice du tableau *)
+     @@ lw t0 0(t1)  
   | GotoAST.UnaryOp (Minus, e) ->
      translate_expression e
      @@ neg t0 t0
@@ -139,13 +139,13 @@ let rec translate_expression (e: GotoAST.expression) = match e with
      @@ or_ t0 t1 t0
   | GotoAST.NewBlock(e) ->
      translate_expression e
-     @@ addi t1 t0 1
-     @@ move a0 t1
-     @@ li t1 4
-     @@ mul a0 a0 t1
+     @@ addi t1 t0 1 (* $t1 <- taille du tableau + en tete *)
+     @@ move a0 t1   
+     @@ li t1 4      
+     @@ mul a0 a0 t1 (* on multiplie par 4 cette taille #4= taille mémoire d'une case *)
      @@ li v0 9
-     @@ syscall
-     @@ sw t0 0(v0)
+     @@ syscall      (* on alloue la mémoire correspondance *)
+     @@ sw t0 0(v0)  (* $t0 <- adresse de l'en tete du tableau *)
      @@ addi t0 v0 4 (* $t0 <- adresse du premier champ *)
 
 (**
