@@ -8,7 +8,7 @@ let find_pos l f =
   let rec find_pos_rec l f c =
     match l with
     | [] -> failwith (Printf.sprintf "Unknown field")
-    | x::n -> if fst x = f then c else find_pos_rec n f (c+1)
+    | (name, t, imm)::n -> if name = f then c else find_pos_rec n f (c+1)
   in
   find_pos_rec l f 0
 

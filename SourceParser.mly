@@ -5,6 +5,16 @@
   open CommonAST
   open SourceLocalisedAST
 
+  let symbl = ref [("arg", TypInt)]
+
+  let cpt = ref 0
+
+  let createTempVar typ  =
+    let name = "__temp__"^(string_of_int !cpt) in
+    cpt := !cpt + 1;
+    symbl := (name,typ)::(!symbl);
+    name
+    
   let add_vars tbl typ vars = 
 	let rec add_vars_rec table var_list =
   		match var_list with
@@ -35,7 +45,38 @@
     match ids, exprs with
     | id::s1, e::s2 -> Sequence(mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos),
 				affect_sequence_localised s1 s2)
-      | _, _ -> failwith (Printf.sprintf "Syntax error")
+    | _, _ -> failwith (Printf.sprintf "Syntax error")
+
+  let rec makeArray l t size_list =
+    let rec array_typ nbr =
+      match nbr with
+      | 0 -> t
+      | n -> TypArray(array_typ (nbr-1))
+    in
+    let temp_type = array_typ ((List.length size_list) - 1) in
+    match size_list with
+    |[] -> failwith (Printf.sprintf "FATAL ERROR, array empty shouldn't happen")
+    |s::[] -> Set(l, mk_expr (NewArray(s, temp_type)) (fst s.e_pos) (snd s.e_pos)) 
+    |s::tail -> 
+      begin
+	let var = createTempVar TypInt in
+	Sequence((mk_instr (Set(l, (mk_expr (NewArray(s, temp_type)) (fst s.e_pos) (snd s.e_pos)))) (fst s.e_pos) (snd s.e_pos)),
+		 (mk_instr (ForLoop(
+		   (mk_instr (Set(Identifier(Id var), (mk_expr (Literal(Int(0))) (fst s.e_pos) (snd s.e_pos)))) (fst s.e_pos) (snd s.e_pos)),
+		   (mk_expr (BinaryOp (Lt, (mk_expr (Location(Identifier (Id var))) (fst s.e_pos) (snd s.e_pos)), s)) (fst s.e_pos) (snd s.e_pos)),
+		   (mk_instr (Set((Identifier(Id var)), (mk_expr (BinaryOp(Add, (mk_expr (Location(Identifier (Id var))) (fst s.e_pos) (snd s.e_pos)), (mk_expr (Literal(Int(1))) (fst s.e_pos) (snd s.e_pos)))) (fst s.e_pos) (snd s.e_pos)))) (fst s.e_pos) (snd s.e_pos)),
+		   (mk_instr (makeArray (ArrayAccess((mk_expr (Location(l)) (fst s.e_pos) (snd s.e_pos)), (mk_expr (Location(Identifier (Id var))) (fst s.e_pos) (snd s.e_pos)))) t tail) (fst s.e_pos) (snd s.e_pos))
+		  ))
+		    (fst s.e_pos) (snd s.e_pos)
+		 )
+	)
+      end
+
+  let rec add_symbl tbl lst =
+    match lst with
+    | [] -> tbl
+    | (name, t)::s -> add_symbl (Symb_Tbl.add name t tbl) s
+    
 %}
 
 (* Définition des lexèmes *)
@@ -48,6 +89,7 @@
 %token AND OR NOT
 %token LP RP LB RB
 %token BREAK CONTINUE
+%token IMMUT
 
 %token VAR
 %token STRUCT
@@ -64,7 +106,7 @@
 %left OR
 %left AND
 %left EQUAL NEQ
-%left LE LT GE GT LB
+%left LE LT GE GT
 %left PLUS MINUS
 %left STAR DIV MOD
 %right NOT UMINUS
@@ -83,8 +125,9 @@ prog:
 | decls=decls; main=main; EOF
   (* Les déclarations de variables donnent une table des symboles, à laquelle
      est ajoutée la variable spéciale [arg] (avec le type entier). *)
-  { { main = mk_instr (Sequence(instruction_list (snd (fst decls)), main)) (fst main.i_pos) (snd main.i_pos);
-      globals = Symb_Tbl.add "arg" TypInt (fst (fst decls));
+  { let symbl_table = add_symbl (fst (fst decls)) (!symbl) in
+    { main = mk_instr (Sequence(instruction_list (snd (fst decls)), main)) (fst main.i_pos) (snd main.i_pos);
+      globals = symbl_table;
       structs = (snd decls) } }
   
 (* Aide : ajout d'une règle pour récupérer grossièrement les erreurs se 
@@ -111,8 +154,10 @@ multiple_vars:
 ;
 
 field_decl:
-| t=typ; id=IDENT; SEMI; fields=field_decl { (id, t)::fields }
-| t=typ; id=IDENT; SEMI { [(id, t)] }
+| IMMUT; t=typ; id=IDENT; SEMI; fields=field_decl { (id, t, true)::fields }
+| t=typ; id=IDENT; SEMI; fields=field_decl { (id, t, false)::fields }
+| IMMUT; t=typ; id=IDENT; SEMI { [(id, t, true)] }
+| t=typ; id=IDENT; SEMI { [(id, t, false)] }
 
 (* Bloc de code principal, formé du mot-clé [main] suivi par le bloc
    proprement dit. *)
@@ -160,6 +205,7 @@ instruction:
 | CONTINUE { Continue }
 | PRINT; LP; e=localised_expression; RP { Print(e) }
 | l=location; SET; e=localised_expression { Set(l, e) }
+| l=location; SET; NEW; t=typ; a=array_decl { makeArray l t a }
 | ids=ident_list; SET; e_list=expr_list { affect_sequence ids e_list }
 | IF; LP; e=localised_expression; RP; i=block { Conditional(e, i, mk_instr Nop 0 0) }
 | IF; LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional { Conditional(e, i, cc) }
@@ -168,6 +214,11 @@ instruction:
 | FOR; LP; i1=localised_instruction; SEMI; e=localised_expression; SEMI; i2=localised_instruction; RP; i3=block { ForLoop(i1, e, i2, i3) }
 | i1=localised_instruction; SEMI; i2=localised_instruction { Sequence(i1, i2) }
 ;
+  
+array_decl:
+|LB; e=localised_expression; RB; { [e] }
+|LB; e=localised_expression; RB; a=array_decl { e::a }
+   
 
 ident_list:
 | id=IDENT; COMMA; id_list=ids { id::id_list }
@@ -208,7 +259,6 @@ expression:
 | LP; e=localised_expression; RP { e.expr }
 | MINUS; e=localised_expression %prec UMINUS { UnaryOp(Minus, e) }
 | NOT; e=localised_expression { UnaryOp(Not, e) }
-| NEW; t=array_decl; LB; e=localised_expression; RB { NewArray(e, t) }
 | NEW; id_struct=IDENT { NewRecord(id_struct) }
 | e1=localised_expression; PLUS; e2=localised_expression { BinaryOp(Add, e1, e2) }
 | e1=localised_expression; MINUS; e2=localised_expression { BinaryOp(Sub, e1, e2) }
@@ -224,8 +274,3 @@ expression:
 | e1=localised_expression; AND; e2=localised_expression { BinaryOp(And, e1, e2) }
 | e1=localised_expression; OR; e2=localised_expression { BinaryOp(Or, e1, e2) }
 ;
-
-array_decl:
-| INTEGER { TypInt }
-| BOOLEAN { TypBool }
-| t=array_decl; LB; e=localised_expression; RB { TypArray(t) }

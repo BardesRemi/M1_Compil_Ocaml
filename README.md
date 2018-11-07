@@ -1,25 +1,24 @@
-# Rendu numéro 1 - Projet Compilation - Rémi Bardes, Nicolas Devatine
+# Rendu numéro 3 - Projet Compilation - Rémi Bardes, Nicolas Devatine
 
-09/14/18 -> 09/26/18
-	
+10/11/18 -> 11/07/18
+
+
 ## Travail effectué :
 
-### Sujet 1.1 :
+### Sujet 3.1 :
 
 * Travail attendu effectué en totalité
-* Extensions : break/continue, boucle for
-	
-### Sujet 1.2 :
+* Extensions : Bornes des tableaux + Tableaux à n dimensions
+	             
+### Sujet 3 .2 :
 * Travail attendu effectué en totalité
-* Extensions : instructions combinées, simplification des expressions arithmétiques constantes, optimisation de l'utilisation de la pile
+* Extensions : Entrelacer les déclarations + Champs immuables
 
-## Travail entamé mais non fonctionnel :
+## Travail entamé mais non fonctionnel : 
+rien à notre connaissance
 
-Aucun
-
-## Travail emprunté :
-
-Aucun
+## Travail emprunté : 
+Alban nous a donné des conseilles pour l'implémentation des matrices. Sans nous donner de codes, il nous a orienté sur la gestion des accés aux locations générés par les tableaux de dimension n.
 
 # Rendu numéro 2 - Projet Compilation - Rémi Bardes, Nicolas Devatine
 
@@ -47,23 +46,24 @@ Dans l'extension "sucre syntaxique" pour l'affectation simultanée le cas x, y :
 
 Aucun
 
-# Rendu numéro 3 - Projet Compilation - Rémi Bardes, Nicolas Devatine
+# Rendu numéro 1 - Projet Compilation - Rémi Bardes, Nicolas Devatine
 
-10/11/18 -> 11/07/18
-
-
+09/14/18 -> 09/26/18
+	
 ## Travail effectué :
 
-### Sujet 3.1 :
+### Sujet 1.1 :
 
 * Travail attendu effectué en totalité
-* Extensions : Sûreté : bornes des tableaux
+* Extensions : break/continue, boucle for
 	
-### Sujet 3 .2 :
+### Sujet 1.2 :
 * Travail attendu effectué en totalité
-* Extensions : Souplesse : entrelacer les déclarations
+* Extensions : instructions combinées, simplification des expressions arithmétiques constantes, optimisation de l'utilisation de la pile
 
 ## Travail entamé mais non fonctionnel :
+
+Aucun
 
 ## Travail emprunté :
 

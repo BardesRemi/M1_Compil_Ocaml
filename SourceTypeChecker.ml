@@ -2,7 +2,12 @@ open CommonAST
 open SourceLocalisedAST
 
 exception Type_error of typ * typ * (int * int)
-    
+
+let rec find_field l field_name =
+  match l with
+  | [] -> failwith (Printf.sprintf "Unknown field")
+  | (name, t, imm)::n -> if field_name = name then (name, t, imm) else find_field n field_name
+
 let type_literal = function
   | Int _ -> TypInt
   | Bool _ -> TypBool
@@ -32,8 +37,7 @@ and type_location context l = match l with
 	 | _                -> failwith (Printf.sprintf "Type Struct expected at position : (%d, %d)" (fst struct_id.e_pos) (snd struct_id.e_pos))
        in
        try
-	 let field = (List.find (fun x -> (fst x) = name) s.fields) in
-	 snd field
+	 let (_, t, _) = (List.find (fun (n,_,_) -> n = name) s.fields) in t
        with
        | Not_found -> failwith (Printf.sprintf "Unknown field at position : (%d, %d)" (fst struct_id.e_pos) (snd struct_id.e_pos))
      end
@@ -61,7 +65,23 @@ and type_expression context e = match e.expr with
 									
 let rec typecheck_instruction context i = match i.instr with
   | Print e -> check_type context i.i_pos e TypInt
-  | Set (l, e) -> check_type context i.i_pos e (type_location context l)
+  | Set (l, expr) ->
+     begin
+	 match l with
+	 | FieldAccess(e, f) ->
+	    let typ = type_expression context e in
+	    begin
+	      match typ with
+	      | TypStruct(name) -> let structure = Symb_Tbl.find name context.struct_types in
+				   let (_, _, immutable)= find_field structure.fields f in
+				   if immutable
+				   then failwith (Printf.sprintf "Field immutable : (%d, %d)" (fst i.i_pos) (snd i.i_pos))
+				   else check_type context i.i_pos expr (type_location context l)
+	      | _ -> failwith (Printf.sprintf "Type Struct expected at position : (%d, %d)" (fst i.i_pos) (snd i.i_pos))
+	    end
+
+	 | _ -> check_type context i.i_pos expr (type_location context l)
+     end
   | Conditional (e, i1, i2) ->
     check_type context i.i_pos e TypBool;
     typecheck_instruction context i1;

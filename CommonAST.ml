@@ -10,7 +10,7 @@ type typ =
   | TypStruct of string
 
 type struct_type = {
-  fields: (string * typ) list;
+  fields: (string * typ * bool) list;
 }
     
 type type_context = {
