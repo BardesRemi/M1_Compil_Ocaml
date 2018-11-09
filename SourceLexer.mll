@@ -55,7 +55,7 @@ rule token = parse
       { long_comment lexbuf }
   (* Les chaînes alphabétiques sont traitées par la fonction [id_or_keyword]
      pour être associées à des mots-clés ou des identifiants. *)
-  | alpha+
+  | (alpha|"_")+
       { id_or_keyword (lexeme lexbuf) }
   (* Nombres entiers décimaux *)
   | number as n

@@ -128,7 +128,8 @@ prog:
   { let symbl_table = add_symbl (fst (fst decls)) (!symbl) in
     { main = mk_instr (Sequence(instruction_list (snd (fst decls)), main)) (fst main.i_pos) (snd main.i_pos);
       globals = symbl_table;
-      structs = (snd decls) } }
+      structs = (snd decls);
+      functions = Symb_Tbl.empty;} }
   
 (* Aide : ajout d'une règle pour récupérer grossièrement les erreurs se 
    propageant jusqu'à la racine. *)
@@ -260,6 +261,7 @@ expression:
 | MINUS; e=localised_expression %prec UMINUS { UnaryOp(Minus, e) }
 | NOT; e=localised_expression { UnaryOp(Not, e) }
 | NEW; id_struct=IDENT { NewRecord(id_struct) }
+| id=IDENT; LP; args=arguments; RP { FunCall(Id (id), args) } 
 | e1=localised_expression; PLUS; e2=localised_expression { BinaryOp(Add, e1, e2) }
 | e1=localised_expression; MINUS; e2=localised_expression { BinaryOp(Sub, e1, e2) }
 | e1=localised_expression; STAR; e2=localised_expression { BinaryOp(Mult, e1, e2) }
@@ -274,3 +276,7 @@ expression:
 | e1=localised_expression; AND; e2=localised_expression { BinaryOp(And, e1, e2) }
 | e1=localised_expression; OR; e2=localised_expression { BinaryOp(Or, e1, e2) }
 ;
+
+(* renvois la liste des args *)
+arguments:
+| args=separated_list(COMMA, localised_expression) { args }

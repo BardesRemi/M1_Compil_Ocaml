@@ -62,6 +62,18 @@ and type_expression context e = match e.expr with
   | BinaryOp (And, b, c) | BinaryOp (Or, b, c) -> check_type context e.e_pos b TypBool; check_type context e.e_pos c TypBool; TypBool
   | NewArray(e_bis, ty) -> check_type context e.e_pos e_bis TypInt; TypArray(ty)
   | NewRecord (name) -> let _ = Symb_Tbl.find name context.struct_types in TypStruct(name)
+  | FunCall(Id funName, e_list) ->
+     begin
+       let signature = Symb_Tbl.find funName context.function_signatures in
+       let return_typ = signature.return in
+       let rec checking_elist_type elist tlist =
+	 match elist, tlist with
+	 | [], []   -> return_typ
+	 | expr::l1, t::l2 -> check_type context e.e_pos expr (snd t); checking_elist_type l1 l2
+	 | _, _ -> failwith (Printf.sprintf "Unmatched numbers of arguments : (%d, %d)" (fst e.e_pos) (snd e.e_pos))
+       in
+       checking_elist_type e_list signature.formals
+     end
 									
 let rec typecheck_instruction context i = match i.instr with
   | Print e -> check_type context i.i_pos e TypInt
@@ -103,7 +115,13 @@ let rec typecheck_instruction context i = match i.instr with
    
 
 let extract_context p =
-  { identifier_types = p.globals; struct_types = p.structs }
+  let predifined_signatures =
+    Symb_Tbl.add "print_int" { return=TypInt; formals=["x", TypInt] }
+      (Symb_Tbl.add "power" { return=TypInt; formals=["x", TypInt; "n", TypInt] } Symb_Tbl.empty)
+  in
+  { identifier_types = p.globals;
+    struct_types = p.structs;
+    function_signatures = predifined_signatures; }
     
 let typecheck_program p =
   let type_context = extract_context p in

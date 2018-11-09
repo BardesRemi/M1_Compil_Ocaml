@@ -153,6 +153,13 @@ let rec translate_expression (e: GotoAST.expression) = match e with
      @@ syscall      (* on alloue la mémoire correspondance *)
      @@ sw t0 0(v0)  (* on met dans l'en-tete t0 qui est la taille du tableau *)
      @@ addi t0 v0 4 (* $t0 <- adresse du premier champ *)
+  | GotoAST.FunCall(Id name, e_list) ->
+     (* 1/ Protocole d'appel : appelant avant l'appel *)
+     (List.fold_left (fun acc e -> (translate_expression e) @@ push t0 @@ acc) nop e_list)
+     (* 2/ Appel avec [jal]. *)
+     @@ jal name
+     (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
+     @@ addi sp sp (4*(List.length e_list))
 
 (**
    Fonction de traduction des locations.
@@ -188,7 +195,7 @@ let rec translate_instruction (i: GotoAST.instruction) = match i with
   | GotoAST.Print e ->
      translate_expression e
      @@ move a0 t0
-     @@ li v0 1
+     @@ li v0 11
      @@ syscall
   | GotoAST.Set (l, e) ->
      translate_expression e
@@ -265,13 +272,39 @@ let translate_program program =
 
     (* Arrêt du programme en cas d'erreur de lecture *)
     @@ label "atoi_error"
-    @@ li   v0 10
+    @@ li v0 10
     @@ syscall
 
     (* Renvoi du résultat via [v0] en cas de succès *)
     @@ label "atoi_end"
     @@ move v0 t1
     @@ jr   ra
+
+    (* Fonction prédéfinie *)
+    @@ comment "print_int"
+    @@ label "print_int"
+    @@ lw a0 4 sp
+    @@ li v0 1
+    @@ syscall
+    @@ sw a0 0 sp
+    @@ subi sp sp 4
+    @@ jr ra
+  
+    @@ comment "power"
+    @@ label "power"
+    @@ lw s0 8 sp
+    @@ lw s1 4 sp
+    @@ li t0 1
+    @@ b "power_loop_guard"
+    @@ label "power_loop_code"
+    @@ mul t0 t0 s1
+    @@ subi s0 s0 1
+    @@ label "power_loop_guard"
+    @@ bgtz s0 "power_loop_code"
+    @@ sw t0 0 sp
+    @@ subi sp sp 4
+    @@ jr ra
+      
   in
 
   (* Construction du texte du programme *)

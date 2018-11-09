@@ -89,6 +89,7 @@ and translate_expression = function
   | Imp.BinaryOp (op, Imp.Literal l1, Imp.Literal l2) -> Gto.BinaryOp(op, Gto.Literal l1, Gto.Literal l2) (* Gestion des expressions arithmétiques constantes de manière optimisé *)
   | Imp.BinaryOp (op, e1, e2) -> Gto.BinaryOp(op, translate_expression e1, translate_expression e2)
   | Imp.NewBlock(e) -> Gto.NewBlock(translate_expression e)
+  | Imp.FunCall(id, e_list) -> Gto.FunCall(id, (List.map (fun x -> translate_expression x) e_list))
     
 and translate_location = function
   | Imp.Identifier id -> Gto.Identifier(id)

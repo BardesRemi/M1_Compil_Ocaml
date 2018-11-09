@@ -34,6 +34,7 @@ let strip_instruction_main type_context i =
        let name_type = Symb_Tbl.find name type_context.struct_types in
        let size = List.length name_type.fields in
        Imp.NewBlock(Imp.Literal(Int(size)))
+    | Src.FunCall(id, e_list) -> Imp.FunCall(id, (List.map (fun x -> strip_expression x) e_list))
   and strip_location i = match i with
     | Src.Identifier id -> Imp.Identifier(id)
     | Src.ArrayAccess (e1, e2) -> Imp.BlockAccess(strip_expression e1, strip_expression e2)

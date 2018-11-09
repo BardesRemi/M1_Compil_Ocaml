@@ -12,6 +12,7 @@ and expression =
   | BinaryOp of binaryOp * localised_expression * localised_expression
   | NewArray of localised_expression * typ
   | NewRecord of string
+  | FunCall of identifier * localised_expression list
 
 and location =
   | Identifier  of identifier
@@ -38,9 +39,15 @@ and instruction =
   | Nop
 
 let mk_instr instr l c = { instr = instr; i_pos = l, c }
+
+type function_info = {
+  signature: function_signature;
+(* add other in B part *)
+}
   
 type program = {
   main: localised_instruction;
   globals: typ Symb_Tbl.t;
   structs: struct_type Symb_Tbl.t;
+  functions: function_info Symb_Tbl.t;
 }

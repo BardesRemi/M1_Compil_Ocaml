@@ -6,6 +6,7 @@ type expression =
   | UnaryOp  of unaryOp  * expression
   | BinaryOp of binaryOp * expression * expression
   | NewBlock of expression
+  | FunCall of identifier * expression list
 
 and location =
   | Identifier  of identifier
