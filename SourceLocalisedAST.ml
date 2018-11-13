@@ -36,13 +36,14 @@ and instruction =
   | Sequence    of localised_instruction * localised_instruction
   | Break
   | Continue
+  | Return of localised_expression
   | Nop
 
 let mk_instr instr l c = { instr = instr; i_pos = l, c }
 
 type function_info = {
   signature: function_signature;
-(* add other in B part *)
+  code: localised_instruction
 }
   
 type program = {

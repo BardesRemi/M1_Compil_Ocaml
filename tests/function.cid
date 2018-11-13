@@ -1,0 +1,17 @@
+var integer acc;
+
+  integer odd(integer n) {
+    //print(47);
+    return(3*n+1);
+  }
+
+  integer even(integer n) {
+    print(92);
+    return(n/2);
+  }
+
+  main {
+    acc := arg;
+    acc := odd(acc);
+    print(acc);
+  }

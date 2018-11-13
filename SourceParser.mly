@@ -5,78 +5,76 @@
   open CommonAST
   open SourceLocalisedAST
 
-  let symbl = ref [("arg", TypInt)]
-
+  let symbls = ref [("arg", TypInt)] (* Liste des symboles à ajouter à la table des symboles *)
   let cpt = ref 0
 
-  let createTempVar typ  =
+  let instr i pos = mk_instr i (fst pos) (snd pos)
+  let expr e pos = mk_expr e (fst pos) (snd pos)
+
+  (* Création d'une variable temporaire *)
+  let create_temp_var typ  =
     let name = "__temp__"^(string_of_int !cpt) in
     cpt := !cpt + 1;
-    symbl := (name,typ)::(!symbl);
+    symbls := (name,typ)::(!symbls);
     name
-    
-  let add_vars tbl typ vars = 
-	let rec add_vars_rec table var_list =
-  		match var_list with
-		| [] -> table
-		| x::s -> add_vars_rec (Symb_Tbl.add x typ table) s	
-	in
-	add_vars_rec tbl vars
- 
-  (* let add_vars tbl typ vars = List.fold_left (fun acc x -> Symb_Tbl.add x typ acc) tbl vars *)
 
+  (* Ajoute à la talbe des symboles tbl la liste de variables vars de type typ *)
+  let add_vars tbl typ vars = List.fold_left (fun acc x -> Symb_Tbl.add x typ acc) tbl vars
+
+  (* Ajoute à la table des symboles tbl la liste de symboles symbls *)
+  let add_symbls tbl symbls = List.fold_left (fun acc (name, typ) -> Symb_Tbl.add name typ acc) tbl symbls
+
+  (* Crée une séquence d'instruction à partir de la liste d'instruction l *)
   let rec instruction_list l = 
     match l with
-    | [] -> mk_instr Nop 0 0
-    | x::n -> mk_instr (Sequence(x, instruction_list n)) (fst x.i_pos) (snd x.i_pos)
- 
+    | [] -> instr Nop (0,0)
+    | i::n -> instr (Sequence(i, instruction_list n)) i.i_pos
+
+  (* Affecte la liste d'expressions exprs à la liste d'identifiants ids *)
   let affect_sequence ids exprs =
     let rec affect_sequence_localised ids exprs =
       match ids, exprs with 
-      | id::[],e::[] -> mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos)
-      | id1::id2::[], e1::e2::[] -> mk_instr (Sequence((mk_instr (Set(Identifier (Id id1), e1)) (fst e1.e_pos) (snd e1.e_pos)),
-						       (mk_instr (Set(Identifier (Id id2), e2)) (fst e1.e_pos) (snd e1.e_pos)))) (fst e1.e_pos) (snd e1.e_pos)
+      | id::[],e::[] -> Set(Identifier (Id id), e)
+      | id1::id2::[], e1::e2::[] -> Sequence((instr (Set(Identifier (Id id1), e1)) e1.e_pos),
+					     (instr (Set(Identifier (Id id2), e2)) e1.e_pos))
       | [], e::s -> failwith (Printf.sprintf "Syntax error : more expressions than identifiers at %d, %d" (fst e.e_pos) (snd e.e_pos))
       | id::s, [] -> failwith (Printf.sprintf "Syntax error : more identifiers than expressions")
-      | id::s1, e::s2 -> mk_instr (Sequence(mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos),
-					    affect_sequence_localised s1 s2)) (fst e.e_pos) (snd e.e_pos)
+      | id::s1, e::s2 -> Sequence(instr (Set(Identifier (Id id), e)) e.e_pos,
+				  instr (affect_sequence_localised s1 s2) e.e_pos)
       | _, _ -> failwith (Printf.sprintf "Syntax error")
     in
     match ids, exprs with
-    | id::s1, e::s2 -> Sequence(mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos),
-				affect_sequence_localised s1 s2)
+    | id::s1, e::s2 -> Sequence(instr (Set(Identifier (Id id), e)) e.e_pos,
+				instr (affect_sequence_localised s1 s2) e.e_pos)
     | _, _ -> failwith (Printf.sprintf "Syntax error")
 
-  let rec makeArray l t size_list =
-    let rec array_typ nbr =
+  (* Création d'un tableau de dimension n, de type typ dans la 'location' loc, dont la taille successive
+     des tableaux est dans size_list *) 
+  let rec make_array loc typ size_list =
+    let rec array_type nbr =
       match nbr with
-      | 0 -> t
-      | n -> TypArray(array_typ (nbr-1))
+      | 0 -> typ
+      | n -> TypArray(array_type (nbr-1))
     in
-    let temp_type = array_typ ((List.length size_list) - 1) in
+    let temp_type = array_type ((List.length size_list) - 1) in
     match size_list with
-    |[] -> failwith (Printf.sprintf "FATAL ERROR, array empty shouldn't happen")
-    |s::[] -> Set(l, mk_expr (NewArray(s, temp_type)) (fst s.e_pos) (snd s.e_pos)) 
-    |s::tail -> 
+    | [] -> failwith (Printf.sprintf "Syntax error: no size for array")
+    | s::[] -> Set(loc, expr (NewArray(s, temp_type)) s.e_pos)
+    | s::tail -> 
       begin
-	let var = createTempVar TypInt in
-	Sequence((mk_instr (Set(l, (mk_expr (NewArray(s, temp_type)) (fst s.e_pos) (snd s.e_pos)))) (fst s.e_pos) (snd s.e_pos)),
-		 (mk_instr (ForLoop(
-		   (mk_instr (Set(Identifier(Id var), (mk_expr (Literal(Int(0))) (fst s.e_pos) (snd s.e_pos)))) (fst s.e_pos) (snd s.e_pos)),
-		   (mk_expr (BinaryOp (Lt, (mk_expr (Location(Identifier (Id var))) (fst s.e_pos) (snd s.e_pos)), s)) (fst s.e_pos) (snd s.e_pos)),
-		   (mk_instr (Set((Identifier(Id var)), (mk_expr (BinaryOp(Add, (mk_expr (Location(Identifier (Id var))) (fst s.e_pos) (snd s.e_pos)), (mk_expr (Literal(Int(1))) (fst s.e_pos) (snd s.e_pos)))) (fst s.e_pos) (snd s.e_pos)))) (fst s.e_pos) (snd s.e_pos)),
-		   (mk_instr (makeArray (ArrayAccess((mk_expr (Location(l)) (fst s.e_pos) (snd s.e_pos)), (mk_expr (Location(Identifier (Id var))) (fst s.e_pos) (snd s.e_pos)))) t tail) (fst s.e_pos) (snd s.e_pos))
-		  ))
-		    (fst s.e_pos) (snd s.e_pos)
-		 )
-	)
+	let var = create_temp_var TypInt in
+	Sequence(
+	  (instr (Set(loc, (expr (NewArray(s, temp_type)) s.e_pos))) s.e_pos),
+	  (instr (ForLoop(
+	    (instr (Set(Identifier(Id var), (expr (Literal(Int(0))) s.e_pos))) s.e_pos),
+	    (expr (BinaryOp (Lt, (expr (Location(Identifier (Id var))) s.e_pos), s)) s.e_pos),
+	    (instr (Set((Identifier(Id var)), (expr (BinaryOp(Add,
+							      (expr (Location(Identifier (Id var))) s.e_pos),
+							      (expr (Literal(Int(1))) s.e_pos))) s.e_pos))) s.e_pos),
+	    (instr (make_array (ArrayAccess((expr (Location(loc)) s.e_pos), (expr (Location(Identifier (Id var))) s.e_pos))) typ tail) s.e_pos)
+	   )) s.e_pos))
       end
 
-  let rec add_symbl tbl lst =
-    match lst with
-    | [] -> tbl
-    | (name, t)::s -> add_symbl (Symb_Tbl.add name t tbl) s
-    
 %}
 
 (* Définition des lexèmes *)
@@ -102,6 +100,7 @@
 %token BEGIN END
 %token EOF
 %token NEW
+%token RETURN
 
 %left OR
 %left AND
@@ -122,14 +121,14 @@
 prog:
 (* Règles : un programme est formé d'une séquence de déclarations de variables
    suivie du bloc de code principal. *)
-| decls=decls; main=main; EOF
+| decls=decls; fun_decl=fun_decl; main=main; EOF
   (* Les déclarations de variables donnent une table des symboles, à laquelle
      est ajoutée la variable spéciale [arg] (avec le type entier). *)
-  { let symbl_table = add_symbl (fst (fst decls)) (!symbl) in
-    { main = mk_instr (Sequence(instruction_list (snd (fst decls)), main)) (fst main.i_pos) (snd main.i_pos);
+  { let symbl_table = add_symbls (fst (fst decls)) (!symbls) in
+    { main = instr (Sequence(instruction_list (snd (fst decls)), main)) main.i_pos;
       globals = symbl_table;
-      structs = (snd decls);
-      functions = Symb_Tbl.empty;} }
+      structs = snd decls;
+      functions = fun_decl;} }
   
 (* Aide : ajout d'une règle pour récupérer grossièrement les erreurs se 
    propageant jusqu'à la racine. *)
@@ -145,20 +144,35 @@ decls:
 (* Si pas de déclaration, on renvoie la table vide. *)
 | (* empty *)  { ((Symb_Tbl.empty, []), Symb_Tbl.empty) }
 | VAR; t=typ; vars_list=multiple_vars; decls=decls { ((add_vars (fst (fst decls)) t vars_list, (snd (fst decls))), (snd decls)) }
-| VAR; t=typ; id=IDENT; SEQUAL; e=localised_expression; SEMI; decls=decls { ((Symb_Tbl.add id t (fst (fst decls)), (mk_instr (Set(Identifier (Id id), e)) (fst e.e_pos) (snd e.e_pos))::(snd (fst decls))), (snd decls)) }
+| VAR; t=typ; id=IDENT; SEQUAL; e=localised_expression; SEMI; decls=decls { ((Symb_Tbl.add id t (fst (fst decls)), (instr (Set(Identifier (Id id), e)) e.e_pos)::(snd (fst decls))), (snd decls)) }
 | STRUCT; id=IDENT; BEGIN; fields=field_decl; END; decls=decls { ((fst decls), Symb_Tbl.add id { fields = fields } (snd decls))  }
 ;
 
+fun_decl:
+| (* empty *) { Symb_Tbl.empty }
+| t=typ; id=IDENT; LP; fp = formal_params; RP; BEGIN; i=localised_instruction; END; fd=fun_decl
+    { Symb_Tbl.add id ({signature={ return=t; formals=fp } ; code=i}) fd}
+;
+    
+(* Déclaration de plusieurs variables sur la meme ligne *)
 multiple_vars:
 | id=IDENT; SEMI { [id] }
 | id=IDENT; COMMA; vars=multiple_vars { id::vars }
 ;
 
+(* Déclaration d'une structure *)
 field_decl:
 | IMMUT; t=typ; id=IDENT; SEMI; fields=field_decl { (id, t, true)::fields }
 | t=typ; id=IDENT; SEMI; fields=field_decl { (id, t, false)::fields }
 | IMMUT; t=typ; id=IDENT; SEMI { [(id, t, true)] }
 | t=typ; id=IDENT; SEMI { [(id, t, false)] }
+;
+
+(* Déclarations des paramètres formels d'une fonction *)
+formal_params:
+| (* empty *) { [] } 
+| t=typ; id=IDENT { [(id,t)] }
+| t=typ; id=IDENT; COMMA; fp = formal_params { (id,t)::fp }
 
 (* Bloc de code principal, formé du mot-clé [main] suivi par le bloc
    proprement dit. *)
@@ -179,13 +193,17 @@ typ:
 
 location:
 | id=IDENT { Identifier (Id id) }
-| e1=location; LB; e2=localised_expression ; RB { ArrayAccess(mk_expr (Location(e1)) 0 0, e2) }
+| e1=location; LB; e2=localised_expression ; RB { ArrayAccess(expr (Location(e1)) e2.e_pos, e2) }
 | struct_id=location_structural_rec; DOT; field_id=IDENT { FieldAccess(struct_id, field_id) }
 ;
 
 location_structural_rec:
-| id=IDENT; { (mk_expr (Location(Identifier(Id id))) 0 0) }
-| id=location_structural_rec; DOT; f=IDENT { mk_expr (Location(FieldAccess(id, f))) 0 0 }
+| id=IDENT; { let l = $startpos.pos_lnum in
+              let c = $startpos.pos_cnum - $startpos.pos_bol in
+              mk_expr (Location(Identifier(Id id))) l c }
+| id=location_structural_rec; DOT; f=IDENT { let l = $startpos.pos_lnum in
+					     let c = $startpos.pos_cnum - $startpos.pos_bol in
+					     mk_expr (Location(FieldAccess(id, f))) l c }
 ;
    
 (* Instruction localisée : on mémorise les numéros de ligne et de colonne du
@@ -206,7 +224,7 @@ instruction:
 | CONTINUE { Continue }
 | PRINT; LP; e=localised_expression; RP { Print(e) }
 | l=location; SET; e=localised_expression { Set(l, e) }
-| l=location; SET; NEW; t=typ; a=array_decl { makeArray l t a }
+| l=location; SET; NEW; t=typ; a=array_decl { make_array l t a }
 | ids=ident_list; SET; e_list=expr_list { affect_sequence ids e_list }
 | IF; LP; e=localised_expression; RP; i=block { Conditional(e, i, mk_instr Nop 0 0) }
 | IF; LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional { Conditional(e, i, cc) }
@@ -214,6 +232,7 @@ instruction:
 | WHILE; LP; e=localised_expression; RP; i=block { Loop(e, i) }
 | FOR; LP; i1=localised_instruction; SEMI; e=localised_expression; SEMI; i2=localised_instruction; RP; i3=block { ForLoop(i1, e, i2, i3) }
 | i1=localised_instruction; SEMI; i2=localised_instruction { Sequence(i1, i2) }
+| RETURN; LP; e=localised_expression; RP { Return(e) }   
 ;
   
 array_decl:
@@ -277,6 +296,6 @@ expression:
 | e1=localised_expression; OR; e2=localised_expression { BinaryOp(Or, e1, e2) }
 ;
 
-(* renvois la liste des args *)
+(* Renvoi la liste des args *)
 arguments:
 | args=separated_list(COMMA, localised_expression) { args }

@@ -115,9 +115,10 @@ let rec typecheck_instruction context i = match i.instr with
    
 
 let extract_context p =
+  let functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k f.signature acc) p.functions Symb_Tbl.empty in 
   let predifined_signatures =
     Symb_Tbl.add "print_int" { return=TypInt; formals=["x", TypInt] }
-      (Symb_Tbl.add "power" { return=TypInt; formals=["x", TypInt; "n", TypInt] } Symb_Tbl.empty)
+      (Symb_Tbl.add "power" { return=TypInt; formals=["x", TypInt; "n", TypInt] } functions)
   in
   { identifier_types = p.globals;
     struct_types = p.structs;

@@ -58,7 +58,7 @@ and macro_name output = parse
 	{ temp_key := (name,0) ;
 	  macro_text output lexbuf }
     | _
-	{ failwith ("Invalide macro definition")}
+	{ failwith ("Invalide macro definition") }
 	
 and macro_text output = parse
     | [^'\n''#']+ as text
@@ -135,8 +135,6 @@ and macro_search_args output = parse
 	  print_file output "%s" (lexeme lexbuf);
 	  read output lexbuf;
 	}
-       
-
 
 {
   let preprocessor file lb =

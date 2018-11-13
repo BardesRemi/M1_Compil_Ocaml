@@ -23,6 +23,7 @@ let strip_instruction_main type_context i =
     | Src.Sequence (i1, i2) -> Imp.Sequence(strip_instruction i1, strip_instruction i2)
     | Src.Break -> Imp.Break
     | Src.Continue -> Imp.Continue
+    | Src.Return(e) -> Imp.Return(strip_expression e)
     | Src.Nop -> Imp.Nop
   and strip_expression i = match Src.(i.expr) with
     | Src.Literal l -> Imp.Literal(l)
@@ -54,4 +55,6 @@ let strip_program p type_context =
   let main = strip_instruction_main type_context Src.(p.main) in
   let globals = Src.(p.globals) in
   let structs = Src.(p.structs) in
-  Imp.({ main; globals; structs })
+  let functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k Imp.({ signature=Src.(f.signature);
+							     code=strip_instruction_main type_context Src.(f.code)}) acc) Src.(p.functions) (Symb_Tbl.empty) in
+  Imp.({ main; globals; structs; functions })

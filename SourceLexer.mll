@@ -26,6 +26,7 @@
 	"new", NEW;
 	"struct", STRUCT;
 	"immutable", IMMUT;
+	"return", RETURN;
       ] ;
     fun s ->
       (* On cherche la chaîne [s] dans la table. Si on trouve un mot-clé alors

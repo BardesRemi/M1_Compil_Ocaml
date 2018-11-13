@@ -23,193 +23,208 @@ let pop  reg = addi sp sp 4 @@ lw reg 0 sp
        - on récupère 'a' dans un autre registre que t0 (pop t1)
        - on effectue l'opération t1 op t0 (dans cette ordre pour respécter les opérations non commutatives)
 *)
-let rec translate_expression (e: GotoAST.expression) = match e with
-  | GotoAST.Literal (Int i) ->
-     li t0 i
-  | GotoAST.Literal (Bool b) ->
-     begin
-     match b with
-     | true ->
-	li t0 (-1)
-     | false ->
-	li t0 0
-     end
-       
-  | GotoAST.Location (Identifier(Id name)) ->
-     la t0 name
-     @@ lw t0 0(t0)
-  | GotoAST.Location (BlockAccess(e1, e2)) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     (* On test si on est dans les bornes du tableaux *)
-     @@ subi t1 t1 4
-     @@ lw t2 0(t1) (* t2 <- la taille du tableaux *)
-     @@ ble t2 t0 "atoi_error"
-     @@ bltz t0 "atoi_error"
-     @@ li t2 4
-     @@ addi t1 t1 4
-     @@ mul t0 t0 t2 (* $t0 <- $t0*4 car taille mémoire d'une case = 4 *)
-     @@ add t1 t1 t0 (* $t1 <- $t1*$t0 car t1 = adresse 1ere case du tableau / t0 = nbr de décalage necessaire pour l'indice du tableau *)
-     @@ lw t0 0(t1)  
-  | GotoAST.UnaryOp (Minus, e) ->
+let translate_instruction_bis (i: GotoAST.instruction) context = 
+  let rec translate_expression (e: GotoAST.expression) = match e with
+    | GotoAST.Literal (Int i) ->
+       li t0 i
+    | GotoAST.Literal (Bool b) ->
+       begin
+	 match b with
+	 | true ->
+	    li t0 (-1)
+	 | false ->
+	    li t0 0
+       end
+	 
+    | GotoAST.Location (Identifier(Id name)) ->
+       begin
+	 try
+	   let pos = Symb_Tbl.find name context in
+	   (* La variable est une variable locale de la fonction en cours d'exécution *)
+	   lw t0 pos sp
+	 with
+	 | Not_found ->
+	    (* La variable n'est pas locale à la fonction en cours d'exécution *)
+	    la t0 name
+	    @@ lw t0 0(t0)
+       end
+    | GotoAST.Location (BlockAccess(e1, e2)) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       (* On test si on est dans les bornes du tableaux *)
+       @@ subi t1 t1 4
+       @@ lw t2 0(t1) (* t2 <- la taille du tableaux *)
+       @@ ble t2 t0 "atoi_error"
+       @@ bltz t0 "atoi_error"
+       @@ li t2 4
+       @@ addi t1 t1 4
+       @@ mul t0 t0 t2 (* $t0 <- $t0*4 car taille mémoire d'une case = 4 *)
+       @@ add t1 t1 t0 (* $t1 <- $t1*$t0 car t1 = adresse 1ère case du tableau | t0 = décalage nécessaire pour l'indice du tableau *)
+       @@ lw t0 0(t1)  
+    | GotoAST.UnaryOp (Minus, e) ->
+       translate_expression e
+       @@ neg t0 t0
+    | GotoAST.UnaryOp (Not, e) ->
+       translate_expression e
+       @@ not_ t0 t0
+    | GotoAST.BinaryOp (Add, Literal (Int i), e) ->
+       translate_expression e
+       @@ addi t0 t0 i
+    | GotoAST.BinaryOp (Add, e, Literal (Int i)) ->
      translate_expression e
-     @@ neg t0 t0
-  | GotoAST.UnaryOp (Not, e) ->
-     translate_expression e
-     @@ not_ t0 t0
-  | GotoAST.BinaryOp (Add, Literal (Int i), e) ->
-     translate_expression e
-     @@ addi t0 t0 i
-  | GotoAST.BinaryOp (Add, e, Literal (Int i)) ->
-     translate_expression e
-     @@ addi t0 t0 i
-  | GotoAST.BinaryOp (Add, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ add t0 t1 t0
-  | GotoAST.BinaryOp (Sub, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ sub t0 t1 t0
-  | GotoAST.BinaryOp (Mult, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ mul t0 t1 t0
-  | GotoAST.BinaryOp (Div, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ div t0 t1 t0
-  | GotoAST.BinaryOp (Mod, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ rem t0 t1 t0
-  | GotoAST.BinaryOp (Eq, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ seq t0 t1 t0
-  | GotoAST.BinaryOp (Neq, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ sne t0 t1 t0
-  | GotoAST.BinaryOp (Lt, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ slt t0 t1 t0
-  | GotoAST.BinaryOp (Le, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ sle t0 t1 t0
-  | GotoAST.BinaryOp (Gt, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ sgt t0 t1 t0
-  | GotoAST.BinaryOp (Ge, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ sge t0 t1 t0
-  | GotoAST.BinaryOp (And, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ and_ t0 t1 t0
-  | GotoAST.BinaryOp (Or, e1, e2) ->
-     translate_expression e1
-     @@ push t0
-     @@ translate_expression e2
-     @@ pop t1
-     @@ or_ t0 t1 t0
-  | GotoAST.NewBlock(e) ->
-     translate_expression e
-     @@ addi t1 t0 1 (* $t1 <- taille du tableau + en tete *)
-     @@ move a0 t1   
-     @@ li t1 4      
-     @@ mul a0 a0 t1 (* on multiplie par 4 cette taille #4= taille mémoire d'une case *)
-     @@ li v0 9
-     @@ syscall      (* on alloue la mémoire correspondance *)
-     @@ sw t0 0(v0)  (* on met dans l'en-tete t0 qui est la taille du tableau *)
-     @@ addi t0 v0 4 (* $t0 <- adresse du premier champ *)
-  | GotoAST.FunCall(Id name, e_list) ->
-     (* 1/ Protocole d'appel : appelant avant l'appel *)
-     (List.fold_left (fun acc e -> (translate_expression e) @@ push t0 @@ acc) nop e_list)
-     (* 2/ Appel avec [jal]. *)
-     @@ jal name
-     (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
-     @@ addi sp sp (4*(List.length e_list))
+       @@ addi t0 t0 i
+    | GotoAST.BinaryOp (Add, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ add t0 t1 t0
+    | GotoAST.BinaryOp (Sub, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ sub t0 t1 t0
+    | GotoAST.BinaryOp (Mult, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ mul t0 t1 t0
+    | GotoAST.BinaryOp (Div, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ div t0 t1 t0
+    | GotoAST.BinaryOp (Mod, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ rem t0 t1 t0
+    | GotoAST.BinaryOp (Eq, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ seq t0 t1 t0
+    | GotoAST.BinaryOp (Neq, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ sne t0 t1 t0
+    | GotoAST.BinaryOp (Lt, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ slt t0 t1 t0
+    | GotoAST.BinaryOp (Le, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ sle t0 t1 t0
+    | GotoAST.BinaryOp (Gt, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ sgt t0 t1 t0
+    | GotoAST.BinaryOp (Ge, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ sge t0 t1 t0
+    | GotoAST.BinaryOp (And, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ and_ t0 t1 t0
+    | GotoAST.BinaryOp (Or, e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       @@ or_ t0 t1 t0
+    | GotoAST.NewBlock(e) ->
+       translate_expression e
+       @@ addi t1 t0 1 (* $t1 <- taille du tableau + en tete *)
+       @@ move a0 t1   
+       @@ li t1 4      
+       @@ mul a0 a0 t1 (* on multiplie par 4 cette taille #4= taille mémoire d'une case *)
+       @@ li v0 9
+       @@ syscall      (* on alloue la mémoire correspondance *)
+       @@ sw t0 0(v0)  (* on met dans l'en-tete t0 qui est la taille du tableau *)
+       @@ addi t0 v0 4 (* $t0 <- adresse du premier champ *)
+    | GotoAST.FunCall(Id name, e_list) ->
+       (* 1/ Protocole d'appel : appelant avant l'appel *)
+       (List.fold_left (fun acc e -> (translate_expression e) @@ push t0 @@ acc) nop e_list)
+       (* 2/ Appel avec [jal]. *)
+       @@ jal name
+       (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
+       @@ addi sp sp (4*(List.length e_list))
 
-(**
-   Fonction de traduction des locations.
-   [translate_location : GotoAST.location -> Mips.text]
-*)
-and translate_location = function
-| GotoAST.Identifier(Id name) ->
-     la t0 name
-| GotoAST.BlockAccess(e1, e2) ->
-   translate_expression e1
-   @@ push t0
-   @@ translate_expression e2
-   @@ pop t1
-   (* On test si on est dans les bornes du tableaux *)
-   @@ subi t1 t1 4
-   @@ lw t2 0(t1) (* t2 <- la taille du tableaux *)
-   @@ ble t2 t0 "atoi_error"
-   @@ bltz t0 "atoi_error"
-   @@ addi t1 t1 4
-   @@ li t2 4
-   @@ mul t0 t0 t2 
-   @@ add t0 t1 t0
-     
-       
-(**
-   Fonction de traduction des instructions.
-   [translate_instruction : GotoAST.instruction -> Mips.text]
-*)
-let rec translate_instruction (i: GotoAST.instruction) = match i with
-  | GotoAST.Sequence (i1, i2) ->
-     translate_instruction i1
-     @@ translate_instruction i2
-  | GotoAST.Print e ->
-     translate_expression e
-     @@ move a0 t0
-     @@ li v0 11
-     @@ syscall
-  | GotoAST.Set (l, e) ->
-     translate_expression e
-     @@ push t0
-     @@ translate_location l
-     @@ pop t1
-     @@ sw t1 0(t0)
-  | GotoAST.Label(Lab l) -> label l
-  | GotoAST.Goto (Lab l) -> b l
-  | GotoAST.ConditionalGoto (Lab l, e) ->
-     translate_expression e
-     @@ bne zero t0 l
-  | GotoAST.Nop -> nop
-
+  (**
+     Fonction de traduction des locations.
+     [translate_location : GotoAST.location -> Mips.text]
+  *)
+  and translate_location = function
+  | GotoAST.Identifier(Id name) ->
+       la t0 name
+    | GotoAST.BlockAccess(e1, e2) ->
+       translate_expression e1
+       @@ push t0
+       @@ translate_expression e2
+       @@ pop t1
+       (* On test si on est dans les bornes du tableaux *)
+       @@ subi t1 t1 4
+       @@ lw t2 0(t1) (* t2 <- la taille du tableaux *)
+       @@ ble t2 t0 "atoi_error"
+       @@ bltz t0 "atoi_error"
+       @@ addi t1 t1 4
+       @@ li t2 4
+       @@ mul t0 t0 t2 
+       @@ add t0 t1 t0
+	 
+  in	 
+  (**
+     Fonction de traduction des instructions.
+     [translate_instruction : GotoAST.instruction -> Mips.text]
+  *)
+  let rec translate_instruction (i: GotoAST.instruction) = match i with
+    | GotoAST.Sequence (i1, i2) ->
+       translate_instruction i1
+       @@ translate_instruction i2
+    | GotoAST.Print e ->
+       translate_expression e
+       @@ move a0 t0
+       @@ li v0 11
+       @@ syscall
+    | GotoAST.Set (l, e) ->
+       translate_expression e
+       @@ push t0
+       @@ translate_location l
+       @@ pop t1
+       @@ sw t1 0(t0)
+    | GotoAST.Label(Lab l) -> label l
+    | GotoAST.Goto (Lab l) -> b l
+    | GotoAST.ConditionalGoto (Lab l, e) ->
+       translate_expression e
+       @@ bne zero t0 l
+    | GotoAST.Nop -> nop
+    | GotoAST.Return(e) ->
+       translate_expression e (* renvois le résultat de e dans t0 *)
+       @@ subi sp sp 4
+       @@ jr ra (* retourne au code qui suis l'appel de fonction *)
+  in
+  translate_instruction i
 
 (** 
     Fonction de traduction des programmes
@@ -289,7 +304,7 @@ let translate_program program =
     @@ sw a0 0 sp
     @@ subi sp sp 4
     @@ jr ra
-  
+      
     @@ comment "power"
     @@ label "power"
     @@ lw s0 8 sp
@@ -308,14 +323,25 @@ let translate_program program =
   in
 
   (* Construction du texte du programme *)
-  let main_code = translate_instruction program.main in
-  let text = init @@ main_code @@ close @@ built_ins in
+  let main_code = translate_instruction_bis program.main (Symb_Tbl.empty) in
+
+  let mips_function k fs acc =
+    let context = List.fold_left (fun acc x -> ((fst acc)+4), Symb_Tbl.add (fst x) (fst acc) (snd acc)) (4, (Symb_Tbl.empty)) fs.signature.formals in
+    acc
+    @@ comment k
+    @@ label k
+    @@ translate_instruction_bis fs.code (snd context)
+  in
+  (* Initialisation des fonctions déclarées *)
+  let functions = Symb_Tbl.fold (fun k f acc -> mips_function k f acc) program.functions nop in
+  
+  let text = init @@ main_code @@ close @@ built_ins @@ functions in
 
   (* Initialisation de la partie des données statiques *)
   let data = Symb_Tbl.fold
     (fun var _ code -> label var @@ dword [0] @@ code)
     program.globals nop
   in
-
+    
   (* Programme généré *)
   { text; data }

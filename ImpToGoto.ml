@@ -55,6 +55,7 @@ let rec translate_instruction i =
        
   | Imp.Break -> raise (Break_Continue_outside_loop) (* Pas de 'break' en dehors d'une boucle *)
   | Imp.Continue -> raise (Break_Continue_outside_loop) (* Pas de 'continue' en dehors d'une boucle *)
+  | Imp.Return(e) -> Gto.Return(translate_expression e)
   | Imp.Nop -> Gto.Nop
 (**
    Fonction de traduction des instructions dans une boucle.
@@ -99,4 +100,6 @@ let translate_program p = Gto.({
   main = translate_instruction Imp.(p.main);
   globals = Imp.(p.globals);
   structs = Imp.(p.structs);
+  functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k { signature=Imp.(f.signature);
+							     code=translate_instruction Imp.(f.code)} acc) Imp.(p.functions) (Symb_Tbl.empty);
 })
