@@ -8,7 +8,7 @@ type typ =
   | TypBool
   | TypArray of typ
   | TypStruct of string
-  | TypNone
+  | TypVoid
 
 type struct_type = {
   fields: (string * typ * bool) list;

@@ -91,7 +91,7 @@
 
 %token VAR
 %token STRUCT
-%token INTEGER BOOLEAN
+%token INTEGER BOOLEAN VOID
 
 %token MAIN
 %token IF ELSE ELIF WHILE FOR
@@ -151,7 +151,7 @@ decls:
 fun_decl:
 | (* empty *) { Symb_Tbl.empty }
 | t=typ; id=IDENT; LP; fp = formal_params; RP; BEGIN; i=localised_instruction; END; fd=fun_decl
-    { Symb_Tbl.add id ({signature={ return=t; formals=fp } ; code=i}) fd}
+   { Symb_Tbl.add id ({signature={ return=t; formals=fp } ; code=i}) fd}
 ;
     
 (* Déclaration de plusieurs variables sur la meme ligne *)
@@ -190,6 +190,7 @@ typ:
 | BOOLEAN { TypBool }
 | t=typ; LB; RB { TypArray(t) }
 | id=IDENT { TypStruct(id) }
+| VOID { TypVoid }
 
 location:
 | id=IDENT { Identifier (Id id) }
@@ -232,7 +233,8 @@ instruction:
 | WHILE; LP; e=localised_expression; RP; i=block { Loop(e, i) }
 | FOR; LP; i1=localised_instruction; SEMI; e=localised_expression; SEMI; i2=localised_instruction; RP; i3=block { ForLoop(i1, e, i2, i3) }
 | i1=localised_instruction; SEMI; i2=localised_instruction { Sequence(i1, i2) }
-| RETURN; LP; e=localised_expression; RP { Return(e) }   
+| RETURN; LP; e=localised_expression; RP { Return(e) }
+| id=IDENT; LP; args=arguments; RP { ProcedureCall(Id (id), args) } 
 ;
   
 array_decl:

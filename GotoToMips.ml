@@ -230,6 +230,21 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
     | GotoAST.Return(e) ->
        translate_expression e (* renvois le résultat de e dans t0 *)
        @@ jr ra (* retourne au code qui suis l'appel de fonction *)
+    | GotoAST.ProcedureCall(Id name, e_list) ->
+       (* 1/ Protocole d'appel : appelant avant l'appel *)
+       (List.fold_left (fun acc e -> (translate_expression e) @@ push t0 @@ acc) nop e_list)
+       (* On met sur la pile fp et ra *)
+       @@ push fp
+       @@ push ra
+       (* On place le fp actuel *)
+       @@ move fp sp
+       @@ addi fp fp 8
+       (* 2/ Appel avec [jal]. *)
+       @@ jal name
+       (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
+       @@ pop ra
+       @@ pop fp
+       @@ addi sp sp (4*(List.length e_list))
   in
   translate_instruction i
 
@@ -338,6 +353,7 @@ let translate_program program =
     @@ comment k
     @@ label k
     @@ translate_instruction_bis fs.code (snd context)
+    @@ jr ra
   in
   (* Initialisation des fonctions déclarées *)
   let functions = Symb_Tbl.fold (fun k f acc -> mips_function k f acc) program.functions nop in

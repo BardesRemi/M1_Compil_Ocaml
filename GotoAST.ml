@@ -20,6 +20,7 @@ type instruction =
   | Goto            of label
   | ConditionalGoto of label * expression
   | Return          of expression
+  | ProcedureCall   of identifier * expression list
   | Nop
 
 let (++) i1 i2 = Sequence(i1, i2)

@@ -56,6 +56,7 @@ let rec translate_instruction i =
   | Imp.Break -> raise (Break_Continue_outside_loop) (* Pas de 'break' en dehors d'une boucle *)
   | Imp.Continue -> raise (Break_Continue_outside_loop) (* Pas de 'continue' en dehors d'une boucle *)
   | Imp.Return(e) -> Gto.Return(translate_expression e)
+  | Imp.ProcedureCall(id, e_list) -> Gto.ProcedureCall(id, (List.map (fun x -> translate_expression x) e_list))
   | Imp.Nop -> Gto.Nop
 (**
    Fonction de traduction des instructions dans une boucle.

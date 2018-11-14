@@ -109,6 +109,17 @@ let rec typecheck_instruction context i = match i.instr with
   | Break -> ()
   | Continue -> ()
   | Return(e) -> check_type context i.i_pos e context.return_type
+  | ProcedureCall(Id funName, e_list) ->
+     begin
+       let signature = Symb_Tbl.find funName context.function_signatures in
+       let rec checking_elist_type elist tlist =
+	 match elist, tlist with
+	 | [], [] -> ()
+	 | expr::l1, t::l2 -> check_type context i.i_pos expr (snd t); checking_elist_type l1 l2
+	 | _, _ -> failwith (Printf.sprintf "Unmatched numbers of arguments : (%d, %d)" (fst i.i_pos) (snd i.i_pos))
+       in
+       checking_elist_type e_list signature.formals
+     end
   | Nop -> ()
    
 
@@ -123,7 +134,7 @@ let typecheck_program p =
     Symb_Tbl.add "print_int" { return=TypInt; formals=["x", TypInt] }
       (Symb_Tbl.add "power" { return=TypInt; formals=["x", TypInt; "n", TypInt] } functions) in
       
-  let type_context = extract_context p p.globals predefined_signatures TypNone in
+  let type_context = extract_context p p.globals predefined_signatures TypVoid in
   typecheck_instruction type_context p.main;
 
   let check_functions k f =

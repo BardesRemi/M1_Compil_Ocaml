@@ -6,13 +6,13 @@ type localised_expression = {
 }
 
 and expression =
-  | Literal  of literal
-  | Location of location
-  | UnaryOp  of unaryOp  * localised_expression
-  | BinaryOp of binaryOp * localised_expression * localised_expression
-  | NewArray of localised_expression * typ
+  | Literal   of literal
+  | Location  of location
+  | UnaryOp   of unaryOp  * localised_expression
+  | BinaryOp  of binaryOp * localised_expression * localised_expression
+  | NewArray  of localised_expression * typ
   | NewRecord of string
-  | FunCall of identifier * localised_expression list
+  | FunCall   of identifier * localised_expression list
 
 and location =
   | Identifier  of identifier
@@ -27,16 +27,16 @@ type localised_instruction = {
 }
 
 and instruction =
-  | Print       of localised_expression
-  | Set         of location * localised_expression
-  | Conditional of localised_expression * localised_instruction
-                                        * localised_instruction
-  | Loop        of localised_expression * localised_instruction
-  | ForLoop     of localised_instruction * localised_expression * localised_instruction * localised_instruction
-  | Sequence    of localised_instruction * localised_instruction
+  | Print         of localised_expression
+  | Set           of location * localised_expression
+  | Conditional   of localised_expression * localised_instruction * localised_instruction
+  | Loop          of localised_expression * localised_instruction
+  | ForLoop       of localised_instruction * localised_expression * localised_instruction * localised_instruction
+  | Sequence      of localised_instruction * localised_instruction
+  | ProcedureCall of identifier * localised_expression list
   | Break
   | Continue
-  | Return of localised_expression
+  | Return        of localised_expression
   | Nop
 
 let mk_instr instr l c = { instr = instr; i_pos = l, c }

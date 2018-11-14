@@ -13,15 +13,16 @@ and location =
   | BlockAccess of expression * expression
 
 type instruction =
-  | Print       of expression
-  | Set         of location   * expression
-  | Conditional of expression * instruction * instruction
-  | Loop        of expression * instruction
-  | ForLoop     of instruction * expression * instruction * instruction
-  | Sequence    of instruction * instruction
+  | Print         of expression
+  | Set           of location   * expression
+  | Conditional   of expression * instruction * instruction
+  | Loop          of expression * instruction
+  | ForLoop       of instruction * expression * instruction * instruction
+  | Sequence      of instruction * instruction
+  | ProcedureCall of identifier * expression list
   | Break
   | Continue
-  | Return      of expression
+  | Return        of expression
   | Nop
 
 type function_info = {

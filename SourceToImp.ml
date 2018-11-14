@@ -24,6 +24,7 @@ let strip_instruction_main type_context i =
     | Src.Break -> Imp.Break
     | Src.Continue -> Imp.Continue
     | Src.Return(e) -> Imp.Return(strip_expression e)
+    | Src.ProcedureCall(id, e_list) -> Imp.ProcedureCall(id, (List.map (fun x -> strip_expression x) e_list))
     | Src.Nop -> Imp.Nop
   and strip_expression i = match Src.(i.expr) with
     | Src.Literal l -> Imp.Literal(l)
