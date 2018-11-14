@@ -41,7 +41,7 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
 	 try
 	   let pos = Symb_Tbl.find name context in
 	   (* La variable est une variable locale de la fonction en cours d'exécution *)
-	   lw t0 pos sp
+	   lw t0 pos fp
 	 with
 	 | Not_found ->
 	    (* La variable n'est pas locale à la fonction en cours d'exécution *)
@@ -166,9 +166,17 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
     | GotoAST.FunCall(Id name, e_list) ->
        (* 1/ Protocole d'appel : appelant avant l'appel *)
        (List.fold_left (fun acc e -> (translate_expression e) @@ push t0 @@ acc) nop e_list)
+       (* On met sur la pile fp et ra *)
+       @@ push fp
+       @@ push ra
+       (* On place le fp actuel *)
+       @@ move fp sp
+       @@ addi fp fp 8
        (* 2/ Appel avec [jal]. *)
        @@ jal name
        (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
+       @@ pop ra
+       @@ pop fp
        @@ addi sp sp (4*(List.length e_list))
 
   (**
@@ -221,7 +229,6 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
     | GotoAST.Nop -> nop
     | GotoAST.Return(e) ->
        translate_expression e (* renvois le résultat de e dans t0 *)
-       @@ subi sp sp 4
        @@ jr ra (* retourne au code qui suis l'appel de fonction *)
   in
   translate_instruction i

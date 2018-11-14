@@ -1,0 +1,15 @@
+integer fact(integer n) {
+  if (n < 1) {
+    return(1);
+  } else {
+    return(n * fact(n-1));
+  }
+}
+
+main {
+  if (fact(6) == 720) {
+    print(79); print(107);
+  } else {
+    print(75); print(111);
+  };
+}

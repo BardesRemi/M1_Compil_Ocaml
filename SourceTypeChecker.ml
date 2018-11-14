@@ -16,10 +16,7 @@ let rec check_type context pos e ty =
   let t = type_expression context e in
   if t = ty
   then ()
-  else begin
-    if t = TypInt then failwith (Printf.sprintf "TypInt")
-    else if t = TypBool then failwith (Printf.sprintf "TypBool")
-    else failwith (Printf.sprintf "TypArray/TypStruct") end (* Printf.printf "test"; raise (Type_error(ty, t, pos)) end *)
+  else raise (Type_error(ty, t, pos))
     
 and type_location context l = match l with
   | Identifier(Id name) -> Symb_Tbl.find name context.identifier_types
@@ -111,20 +108,27 @@ let rec typecheck_instruction context i = match i.instr with
     typecheck_instruction context i2
   | Break -> ()
   | Continue -> ()
+  | Return(e) -> check_type context i.i_pos e context.return_type
   | Nop -> ()
    
 
-let extract_context p =
-  let functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k f.signature acc) p.functions Symb_Tbl.empty in 
-  let predifined_signatures =
-    Symb_Tbl.add "print_int" { return=TypInt; formals=["x", TypInt] }
-      (Symb_Tbl.add "power" { return=TypInt; formals=["x", TypInt; "n", TypInt] } functions)
-  in
-  { identifier_types = p.globals;
-    struct_types = p.structs;
-    function_signatures = predifined_signatures; }
+let extract_context p idents f ty = { identifier_types = idents;
+				      struct_types = p.structs;
+				      function_signatures = f;
+				      return_type = ty }
     
 let typecheck_program p =
-  let type_context = extract_context p in
+  let functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k f.signature acc) p.functions Symb_Tbl.empty in 
+  let predefined_signatures =
+    Symb_Tbl.add "print_int" { return=TypInt; formals=["x", TypInt] }
+      (Symb_Tbl.add "power" { return=TypInt; formals=["x", TypInt; "n", TypInt] } functions) in
+      
+  let type_context = extract_context p p.globals predefined_signatures TypNone in
   typecheck_instruction type_context p.main;
+
+  let check_functions k f =
+    let type_context = extract_context p (List.fold_left (fun acc x -> Symb_Tbl.add (fst x) (snd x) acc) p.globals f.signature.formals) predefined_signatures f.signature.return in
+    typecheck_instruction type_context f.code
+  in
+  Symb_Tbl.iter (check_functions) p.functions;
   type_context;

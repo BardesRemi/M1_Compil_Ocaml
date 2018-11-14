@@ -8,6 +8,7 @@ type typ =
   | TypBool
   | TypArray of typ
   | TypStruct of string
+  | TypNone
 
 type struct_type = {
   fields: (string * typ * bool) list;
@@ -22,6 +23,7 @@ type type_context = {
   identifier_types: typ Symb_Tbl.t;
   struct_types: struct_type Symb_Tbl.t;
   function_signatures: function_signature Symb_Tbl.t;
+  return_type: typ;
 }
 
 type literal =
