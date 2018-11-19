@@ -1,10 +1,10 @@
 var integer acc;
 
 integer odd(integer n) {
-  var integer n;
-  n := 47;
-  print(n);
-  return(3*n+1);
+  var integer j;
+  j := 3;
+  print(47);
+  return(j*n+1);
 }
 
 integer even(integer n) {
