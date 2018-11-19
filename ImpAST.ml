@@ -26,6 +26,7 @@ type instruction =
   | Nop
 
 type function_info = {
+  locals: typ Symb_Tbl.t;
   signature: function_signature;
   code: instruction
 }
@@ -36,3 +37,5 @@ type program = {
   structs: struct_type Symb_Tbl.t;
   functions: function_info Symb_Tbl.t;
 }
+
+  

@@ -1,6 +1,6 @@
 var channel c;
 
-struct message { immutable integer a; integer b; }
+struct message { integer a; integer b; }
 
 var tableau t;
 

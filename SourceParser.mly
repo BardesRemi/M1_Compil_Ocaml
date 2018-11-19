@@ -150,8 +150,10 @@ decls:
 
 fun_decl:
 | (* empty *) { Symb_Tbl.empty }
-| t=typ; id=IDENT; LP; fp = formal_params; RP; BEGIN; i=localised_instruction; END; fd=fun_decl
-   { Symb_Tbl.add id ({signature={ return=t; formals=fp } ; code=i}) fd}
+| t=typ; id=IDENT; LP; fp = formal_params; RP; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
+   { Symb_Tbl.add id ({locals=(fst (fst localsVar)) ;signature={ return=t; formals=fp } ; code=i}) fd}
+| id=IDENT; LP; fp = formal_params; RP; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
+   { Symb_Tbl.add id ({locals=(fst (fst localsVar)) ;signature={ return=TypVoid; formals=fp } ; code=i}) fd}
 ;
     
 (* Déclaration de plusieurs variables sur la meme ligne *)
@@ -182,7 +184,7 @@ main:
 
 (* Un bloc est une instruction ou séquence d'instructions entre accolades. *)
 block:
-| BEGIN; i=localised_instruction; END { i }
+| BEGIN; i=localised_complexe_instruction; END { i }
 ;
 
 typ:
@@ -211,14 +213,20 @@ location_structural_rec:
    début de l'instruction.
    Voir dans la doc la définition de [Lexing.position] pour la signification
    de [pos_lnum], [pos_cnum] et [pos_bol]. *)
-localised_instruction:
-| i=instruction { let l = $startpos.pos_lnum in
+localised_simple_instruction:
+| i=simple_instruction { let l = $startpos.pos_lnum in
+                  let c = $startpos.pos_cnum - $startpos.pos_bol in
+                  mk_instr i l c }
+;
+
+localised_complexe_instruction:
+| i=complexe_instruction { let l = $startpos.pos_lnum in
                   let c = $startpos.pos_cnum - $startpos.pos_bol in
                   mk_instr i l c }
 ;
 
 (* Instructions *)
-instruction: 
+simple_instruction:
 (* Si pas d'instruction, on renvoie l'instruction neutre. *)
 | (* empty *)  { Nop }
 | BREAK { Break }
@@ -226,17 +234,21 @@ instruction:
 | PRINT; LP; e=localised_expression; RP { Print(e) }
 | l=location; SET; e=localised_expression { Set(l, e) }
 | l=location; SET; NEW; t=typ; a=array_decl { make_array l t a }
-| ids=ident_list; SET; e_list=expr_list { affect_sequence ids e_list }
+| RETURN; LP; e=localised_expression; RP { Return(e) }
+| id=IDENT; LP; args=arguments; RP { ProcedureCall(Id (id), args) } 
+;
+
+complexe_instruction:
+| i=simple_instruction { i }
 | IF; LP; e=localised_expression; RP; i=block { Conditional(e, i, mk_instr Nop 0 0) }
 | IF; LP; e=localised_expression; RP; i=block; ELIF; cc=cascade_conditional { Conditional(e, i, cc) }
 | IF; LP; e=localised_expression; RP; i1=block; ELSE; i2=block { Conditional(e, i1, i2) }
 | WHILE; LP; e=localised_expression; RP; i=block { Loop(e, i) }
-| FOR; LP; i1=localised_instruction; SEMI; e=localised_expression; SEMI; i2=localised_instruction; RP; i3=block { ForLoop(i1, e, i2, i3) }
-| i1=localised_instruction; SEMI; i2=localised_instruction { Sequence(i1, i2) }
-| RETURN; LP; e=localised_expression; RP { Return(e) }
-| id=IDENT; LP; args=arguments; RP { ProcedureCall(Id (id), args) } 
+| FOR; LP; i1=localised_simple_instruction; COMMA; e=localised_expression; COMMA; i2=localised_simple_instruction; RP; i3=block { ForLoop(i1, e, i2, i3) }
+| i1=localised_complexe_instruction; SEMI; i2=localised_complexe_instruction { Sequence(i1, i2) }
+| ids=ident_list; SET; e_list=expr_list { affect_sequence ids e_list }
 ;
-  
+
 array_decl:
 |LB; e=localised_expression; RB; { [e] }
 |LB; e=localised_expression; RB; a=array_decl { e::a }

@@ -138,7 +138,9 @@ let typecheck_program p =
   typecheck_instruction type_context p.main;
 
   let check_functions k f =
-    let type_context = extract_context p (List.fold_left (fun acc x -> Symb_Tbl.add (fst x) (snd x) acc) p.globals f.signature.formals) predefined_signatures f.signature.return in
+    let temp_VarsTable = List.fold_left (fun acc x -> Symb_Tbl.add (fst x) (snd x) acc) p.globals f.signature.formals in
+    let type_context = extract_context p (Symb_Tbl.fold (fun k v acc -> Symb_Tbl.add k v acc) f.locals temp_VarsTable) predefined_signatures f.signature.return in
+    
     typecheck_instruction type_context f.code
   in
   Symb_Tbl.iter (check_functions) p.functions;

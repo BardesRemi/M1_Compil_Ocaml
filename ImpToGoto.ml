@@ -101,6 +101,7 @@ let translate_program p = Gto.({
   main = translate_instruction Imp.(p.main);
   globals = Imp.(p.globals);
   structs = Imp.(p.structs);
-  functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k { signature=Imp.(f.signature);
+  functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k { locals=Imp.(f.locals);
+                                                             signature=Imp.(f.signature);
 							     code=translate_instruction Imp.(f.code)} acc) Imp.(p.functions) (Symb_Tbl.empty);
 })

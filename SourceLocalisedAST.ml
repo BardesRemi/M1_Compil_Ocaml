@@ -42,6 +42,7 @@ and instruction =
 let mk_instr instr l c = { instr = instr; i_pos = l, c }
 
 type function_info = {
+  locals: typ Symb_Tbl.t;
   signature: function_signature;
   code: localised_instruction
 }

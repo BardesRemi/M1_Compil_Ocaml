@@ -2,6 +2,12 @@ open CommonAST
 open GotoAST
 open Mips
 
+(* type de gestion des variables locales et formelles d'une fonction *)
+type function_vars = {
+  localVars: int Symb_Tbl.t;
+  formalVars: int Symb_Tbl.t
+}
+
 (* Fonctions auxiliaires fournissant les pseudo-instructions [push] et [pop]. *)
 let push reg = sw reg 0 sp  @@ subi sp sp 4
 let pop  reg = addi sp sp 4 @@ lw reg 0 sp
@@ -39,14 +45,22 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
     | GotoAST.Location (Identifier(Id name)) ->
        begin
 	 try
-	   let pos = Symb_Tbl.find name context in
-	   (* La variable est une variable locale de la fonction en cours d'exécution *)
-	   lw t0 pos fp
+	   let local_pos = Symb_Tbl.find name context.localVars in
+	   (* La variable est une locale *)
+	   lw t0 local_pos fp
 	 with
 	 | Not_found ->
-	    (* La variable n'est pas locale à la fonction en cours d'exécution *)
-	    la t0 name
-	    @@ lw t0 0(t0)
+	    begin
+	      try
+		let formal_pos = Symb_Tbl.find name context.formalVars in
+		(* La variable est un paramètre formel de la fonction en cours d'exécution *)
+		lw t0 formal_pos fp
+	      with
+	      | Not_found ->
+		 (* La variable est une globale *)
+		 la t0 name
+		 @@ lw t0 0(t0)
+	    end
        end
     | GotoAST.Location (BlockAccess(e1, e2)) ->
        translate_expression e1
@@ -163,9 +177,9 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
        @@ syscall      (* on alloue la mémoire correspondance *)
        @@ sw t0 0(v0)  (* on met dans l'en-tete t0 qui est la taille du tableau *)
        @@ addi t0 v0 4 (* $t0 <- adresse du premier champ *)
-    | GotoAST.FunCall(Id name, e_list) ->
+    | GotoAST.FunCall(Id name, param_list) ->
        (* 1/ Protocole d'appel : appelant avant l'appel *)
-       (List.fold_left (fun acc e -> (translate_expression e) @@ push t0 @@ acc) nop e_list)
+       (List.fold_left (fun acc e -> (translate_expression e) @@ push t0 @@ acc) nop param_list)
        (* On met sur la pile fp et ra *)
        @@ push fp
        @@ push ra
@@ -173,19 +187,29 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
        @@ move fp sp
        @@ addi fp fp 8
        (* 2/ Appel avec [jal]. *)
+       @@ addi sp sp (4*(Symb_Tbl.cardinal context.localVars))
        @@ jal name
        (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
        @@ pop ra
        @@ pop fp
-       @@ addi sp sp (4*(List.length e_list))
+       @@ addi sp sp (4*(List.length param_list))
 
   (**
      Fonction de traduction des locations.
      [translate_location : GotoAST.location -> Mips.text]
   *)
   and translate_location = function
-  | GotoAST.Identifier(Id name) ->
-       la t0 name
+    | GotoAST.Identifier(Id name) ->
+       begin
+	 try
+	   let local_pos = Symb_Tbl.find name context.localVars in
+	   (* La variable est un paramètre formel de la fonction en cours d'exécution *)
+	   addi t0 fp local_pos
+	 with
+	 | Not_found ->
+	    (* La variable est une globale *)
+	    la t0 name
+       end
     | GotoAST.BlockAccess(e1, e2) ->
        translate_expression e1
        @@ push t0
@@ -215,7 +239,7 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
        @@ move a0 t0
        @@ li v0 11
        @@ syscall
-    | GotoAST.Set (l, e) ->
+    | GotoAST.Set (l, e) ->  
        translate_expression e
        @@ push t0
        @@ translate_location l
@@ -345,14 +369,16 @@ let translate_program program =
   in
 
   (* Construction du texte du programme *)
-  let main_code = translate_instruction_bis program.main (Symb_Tbl.empty) in
+  let main_code = translate_instruction_bis program.main { localVars=(Symb_Tbl.empty); formalVars=(Symb_Tbl.empty) } in
 
   let mips_function k fs acc =
-    let context = List.fold_left (fun acc x -> ((fst acc)+4), Symb_Tbl.add (fst x) (fst acc) (snd acc)) (4, (Symb_Tbl.empty)) fs.signature.formals in
+    let context = {
+      localVars=snd (Symb_Tbl.fold (fun k t acc -> ((fst acc)-4, Symb_Tbl.add k (fst acc) (snd acc))) fs.locals (-8,(Symb_Tbl.empty)));
+      formalVars=snd (List.fold_left (fun acc x -> ((fst acc)+4, Symb_Tbl.add (fst x) (fst acc) (snd acc))) (4, (Symb_Tbl.empty)) fs.signature.formals) } in
     acc
     @@ comment k
     @@ label k
-    @@ translate_instruction_bis fs.code (snd context)
+    @@ translate_instruction_bis fs.code context
     @@ jr ra
   in
   (* Initialisation des fonctions déclarées *)

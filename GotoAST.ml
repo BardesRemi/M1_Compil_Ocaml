@@ -26,6 +26,7 @@ type instruction =
 let (++) i1 i2 = Sequence(i1, i2)
 
 type function_info = {
+  locals: typ Symb_Tbl.t;
   signature: function_signature;
   code: instruction
 }

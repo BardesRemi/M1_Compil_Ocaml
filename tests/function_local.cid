@@ -1,0 +1,25 @@
+var integer acc;
+
+integer odd(integer n) {
+  var integer n;
+  n := 47;
+  print(n);
+  return(3*n+1);
+}
+
+integer even(integer n) {
+  print(92);
+  return(n/2);
+}
+
+main {
+  acc := arg;
+  while (acc != 1) {
+    if (acc%2 == 0) {
+      acc := even(acc);
+    } else {
+      acc := odd(acc);
+    }
+  }
+}
+
