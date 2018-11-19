@@ -2,7 +2,7 @@ open CommonAST
 open GotoAST
 open Mips
 
-(* type de gestion des variables locales et formelles d'une fonction *)
+(* Type de gestion des variables locales et formelles d'une fonction *)
 type function_vars = {
   localVars: int Symb_Tbl.t;
   formalVars: int Symb_Tbl.t
