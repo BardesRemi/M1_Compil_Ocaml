@@ -187,8 +187,9 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
        @@ move fp sp
        @@ addi fp fp 8
        (* 2/ Appel avec [jal]. *)
-       @@ addi sp sp (4*(Symb_Tbl.cardinal context.localVars))
+       @@ subi sp sp (4*(Symb_Tbl.cardinal context.localVars))
        @@ jal name
+       @@ addi sp sp (4*(Symb_Tbl.cardinal context.localVars))
        (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
        @@ pop ra
        @@ pop fp
@@ -264,7 +265,9 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
        @@ move fp sp
        @@ addi fp fp 8
        (* 2/ Appel avec [jal]. *)
+       @@ subi sp sp (4*(Symb_Tbl.cardinal context.localVars))
        @@ jal name
+       @@ addi sp sp (4*(Symb_Tbl.cardinal context.localVars))
        (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
        @@ pop ra
        @@ pop fp
@@ -347,8 +350,9 @@ let translate_program program =
     @@ lw a0 4 sp
     @@ li v0 1
     @@ syscall
-    @@ sw a0 0 sp
-    @@ subi sp sp 4
+    (* @@ sw a0 0 sp
+       @@ subi sp sp 4 *)
+    @@ move t0 a0
     @@ jr ra
       
     @@ comment "power"
@@ -362,8 +366,8 @@ let translate_program program =
     @@ subi s0 s0 1
     @@ label "power_loop_guard"
     @@ bgtz s0 "power_loop_code"
-    @@ sw t0 0 sp
-    @@ subi sp sp 4
+    (* @@ sw t0 0 sp
+       @@ subi sp sp 4 *)
     @@ jr ra
       
   in
