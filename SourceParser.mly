@@ -89,11 +89,11 @@
 %token BREAK CONTINUE
 %token IMMUT
 
+%token MAIN
 %token VAR
 %token STRUCT
 %token INTEGER BOOLEAN VOID
 
-%token MAIN
 %token IF ELSE ELIF WHILE FOR
 %token SEMI COMMA DOT
 %token SET
@@ -121,11 +121,13 @@
 prog:
 (* Règles : un programme est formé d'une séquence de déclarations de variables
    suivie du bloc de code principal. *)
-| decls=decls; fun_decl=fun_decl; main=main; EOF
+| decls=decls; fun_decl=fun_decl; EOF
   (* Les déclarations de variables donnent une table des symboles, à laquelle
      est ajoutée la variable spéciale [arg] (avec le type entier). *)
   { let symbl_table = add_symbls (fst (fst decls)) (!symbls) in
-    { main = instr (Sequence(instruction_list (snd (fst decls)), main)) main.i_pos;
+    let pos = $startpos in
+    let i_pos = (pos.pos_lnum, pos.pos_cnum) in 
+    { main = instr (Sequence(instruction_list (snd (fst decls)), instr (ProcedureCall(Id ("main"), [expr (Location(Identifier(Id "arg"))) i_pos])) i_pos)) i_pos;
       globals = symbl_table;
       structs = snd decls;
       functions = fun_decl;} }
@@ -151,9 +153,13 @@ decls:
 fun_decl:
 | (* empty *) { Symb_Tbl.empty }
 | t=typ; id=IDENT; LP; fp = formal_params; RP; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
-   { Symb_Tbl.add id ({locals=(fst (fst localsVar)) ;signature={ return=t; formals=fp } ; code=i}) fd}
+   { Symb_Tbl.add id ({locals=(fst (fst localsVar)) ;signature={ return=t; formals=fp } ; code=i}) fd }
 | id=IDENT; LP; fp = formal_params; RP; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
-   { Symb_Tbl.add id ({locals=(fst (fst localsVar)) ;signature={ return=TypVoid; formals=fp } ; code=i}) fd}
+   { Symb_Tbl.add id ({locals=(fst (fst localsVar)) ;signature={ return=TypVoid; formals=fp } ; code=i}) fd }
+| MAIN; LP; fp = formal_params; RP; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
+   { Symb_Tbl.add "main" ({locals=(fst (fst localsVar)) ;signature={ return=TypInt; formals=fp } ; code=i}) fd }
+| MAIN; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
+   { Symb_Tbl.add "main" ({locals=(fst (fst localsVar)) ;signature={ return=TypInt; formals=[("arg",TypInt)] } ; code=i}) fd }
 ;
     
 (* Déclaration de plusieurs variables sur la meme ligne *)
@@ -175,12 +181,6 @@ formal_params:
 | (* empty *) { [] } 
 | t=typ; id=IDENT { [(id,t)] }
 | t=typ; id=IDENT; COMMA; fp = formal_params { (id,t)::fp }
-
-(* Bloc de code principal, formé du mot-clé [main] suivi par le bloc
-   proprement dit. *)
-main:
-| MAIN; i=block { i }
-;
 
 (* Un bloc est une instruction ou séquence d'instructions entre accolades. *)
 block:

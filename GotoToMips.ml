@@ -214,8 +214,7 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
        @@ addi t1 t1 4
        @@ li t2 4
        @@ mul t0 t0 t2 
-       @@ add t0 t1 t0
-	 
+       @@ add t0 t1 t0	 
   in	 
   (**
      Fonction de traduction des instructions.
@@ -250,7 +249,6 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
        @@ jal name
        (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
        @@ addi sp sp (4*(List.length e_list))
-       
   in
   translate_instruction i
 
@@ -366,8 +364,7 @@ let translate_program program =
     @@ syscall
     @@ pop ra
     @@ pop fp
-    @@ jr ra
-      
+    @@ jr ra  
   in
 
   (* Construction du texte du programme *)
