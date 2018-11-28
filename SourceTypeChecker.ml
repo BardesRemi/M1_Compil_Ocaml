@@ -73,7 +73,6 @@ and type_expression context e = match e.expr with
      end
 									
 let rec typecheck_instruction context i = match i.instr with
-  | Print e -> check_type context i.i_pos e TypInt
   | Set (l, expr) ->
      begin
 	 match l with
@@ -132,7 +131,8 @@ let typecheck_program p =
   let functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k f.signature acc) p.functions Symb_Tbl.empty in 
   let predefined_signatures =
     Symb_Tbl.add "print_int" { return=TypInt; formals=["x", TypInt] }
-      (Symb_Tbl.add "power" { return=TypInt; formals=["x", TypInt; "n", TypInt] } functions) in
+      (Symb_Tbl.add "power" { return=TypInt; formals=["x", TypInt; "n", TypInt] }
+	 (Symb_Tbl.add "print" { return=TypVoid; formals=["x", TypInt] } functions)) in
       
   let type_context = extract_context p p.globals predefined_signatures TypVoid in
   typecheck_instruction type_context p.main;

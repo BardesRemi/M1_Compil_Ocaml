@@ -12,7 +12,6 @@
       [	"main", MAIN;
 	"while", WHILE;
 	"for", FOR;
-	"print", PRINT;
 	"if", IF;
 	"else", ELSE;
 	"elif", ELIF;

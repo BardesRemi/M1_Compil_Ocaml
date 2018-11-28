@@ -14,7 +14,6 @@ and location =
   
 type instruction =
   | Sequence        of instruction * instruction
-  | Print           of expression
   | Set             of location * expression
   | Label           of label
   | Goto            of label

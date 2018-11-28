@@ -96,7 +96,7 @@
 %token MAIN
 %token IF ELSE ELIF WHILE FOR
 %token SEMI COMMA DOT
-%token SET PRINT
+%token SET
 %token BEGIN END
 %token EOF
 %token NEW
@@ -231,7 +231,6 @@ simple_instruction:
 | (* empty *)  { Nop }
 | BREAK { Break }
 | CONTINUE { Continue }
-| PRINT; LP; e=localised_expression; RP { Print(e) }
 | l=location; SET; e=localised_expression { Set(l, e) }
 | l=location; SET; NEW; t=typ; a=array_decl { make_array l t a }
 | RETURN; LP; e=localised_expression; RP { Return(e) }

@@ -13,7 +13,6 @@ and location =
   | BlockAccess of expression * expression
 
 type instruction =
-  | Print         of expression
   | Set           of location   * expression
   | Conditional   of expression * instruction * instruction
   | Loop          of expression * instruction

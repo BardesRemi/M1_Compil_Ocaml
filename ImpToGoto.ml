@@ -13,7 +13,6 @@ let new_label =
 let rec translate_instruction i =
   match i with
   | Imp.Sequence (i1, i2) -> Gto.Sequence(translate_instruction i1, translate_instruction i2)
-  | Imp.Print e -> Gto.Print(translate_expression e)
   | Imp.Set (l, e) -> Gto.Set(translate_location l, translate_expression e)
   | Imp.Conditional (e, i1, i2) ->
      let then_label = new_label()

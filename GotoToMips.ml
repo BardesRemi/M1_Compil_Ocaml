@@ -59,7 +59,7 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
 	      | Not_found ->
 		 (* La variable est une globale *)
 		 la t0 name
-		 @@ lw t0 0(t0)
+		 @@ lw t0 0 t0
 	    end
        end
     | GotoAST.Location (BlockAccess(e1, e2)) ->
@@ -180,19 +180,9 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
     | GotoAST.FunCall(Id name, param_list) ->
        (* 1/ Protocole d'appel : appelant avant l'appel *)
        (List.fold_left (fun acc e -> (translate_expression e) @@ push t0 @@ acc) nop param_list)
-       (* On met sur la pile fp et ra *)
-       @@ push fp
-       @@ push ra
-       (* On place le fp actuel *)
-       @@ move fp sp
-       @@ addi fp fp 8
        (* 2/ Appel avec [jal]. *)
-       @@ subi sp sp (4*(Symb_Tbl.cardinal context.localVars))
        @@ jal name
-       @@ addi sp sp (4*(Symb_Tbl.cardinal context.localVars))
        (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
-       @@ pop ra
-       @@ pop fp
        @@ addi sp sp (4*(List.length param_list))
 
   (**
@@ -235,11 +225,6 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
     | GotoAST.Sequence (i1, i2) ->
        translate_instruction i1
        @@ translate_instruction i2
-    | GotoAST.Print e ->
-       translate_expression e
-       @@ move a0 t0
-       @@ li v0 11
-       @@ syscall
     | GotoAST.Set (l, e) ->  
        translate_expression e
        @@ push t0
@@ -254,24 +239,18 @@ let translate_instruction_bis (i: GotoAST.instruction) context =
     | GotoAST.Nop -> nop
     | GotoAST.Return(e) ->
        translate_expression e (* renvois le résultat de e dans t0 *)
+       @@ addi sp sp (4*(Symb_Tbl.cardinal context.localVars))
+       @@ pop ra
+       @@ pop fp
        @@ jr ra (* retourne au code qui suis l'appel de fonction *)
     | GotoAST.ProcedureCall(Id name, e_list) ->
        (* 1/ Protocole d'appel : appelant avant l'appel *)
        (List.fold_left (fun acc e -> (translate_expression e) @@ push t0 @@ acc) nop e_list)
-       (* On met sur la pile fp et ra *)
-       @@ push fp
-       @@ push ra
-       (* On place le fp actuel *)
-       @@ move fp sp
-       @@ addi fp fp 8
        (* 2/ Appel avec [jal]. *)
-       @@ subi sp sp (4*(Symb_Tbl.cardinal context.localVars))
        @@ jal name
-       @@ addi sp sp (4*(Symb_Tbl.cardinal context.localVars))
        (* 3/ Protocole d'appel : appelant après l'appel. on à déjà t0 <- res *)
-       @@ pop ra
-       @@ pop fp
        @@ addi sp sp (4*(List.length e_list))
+       
   in
   translate_instruction i
 
@@ -347,18 +326,24 @@ let translate_program program =
     (* Fonction prédéfinie *)
     @@ comment "print_int"
     @@ label "print_int"
+    @@ push fp
+    @@ push ra
+    @@ addi fp sp 8
     @@ lw a0 4 sp
     @@ li v0 1
     @@ syscall
-    (* @@ sw a0 0 sp
-       @@ subi sp sp 4 *)
     @@ move t0 a0
+    @@ pop ra
+    @@ pop fp
     @@ jr ra
       
     @@ comment "power"
     @@ label "power"
-    @@ lw s0 8 sp
-    @@ lw s1 4 sp
+    @@ push fp
+    @@ push ra
+    @@ addi fp sp 8
+    @@ lw s0 8(fp)
+    @@ lw s1 4(fp)
     @@ li t0 1
     @@ b "power_loop_guard"
     @@ label "power_loop_code"
@@ -366,8 +351,21 @@ let translate_program program =
     @@ subi s0 s0 1
     @@ label "power_loop_guard"
     @@ bgtz s0 "power_loop_code"
-    (* @@ sw t0 0 sp
-       @@ subi sp sp 4 *)
+    @@ pop ra
+    @@ pop fp
+    @@ jr ra
+
+    @@ comment "print"
+    @@ label "print"
+    @@ push fp
+    @@ push ra
+    @@ addi fp sp 8
+    @@ lw t0 4(fp)
+    @@ move a0 t0
+    @@ li v0 11
+    @@ syscall
+    @@ pop ra
+    @@ pop fp
     @@ jr ra
       
   in
@@ -382,7 +380,16 @@ let translate_program program =
     acc
     @@ comment k
     @@ label k
+    (* On met fp et ra sur la pile *)
+    @@ push fp
+    @@ push ra
+    (* On place le fp actuel *)
+    @@ addi fp sp 8
+    @@ subi sp sp (4*(Symb_Tbl.cardinal context.localVars))
     @@ translate_instruction_bis fs.code context
+    @@ addi sp sp (4*(Symb_Tbl.cardinal context.localVars))
+    @@ pop ra
+    @@ pop fp
     @@ jr ra
   in
   (* Initialisation des fonctions déclarées *)

@@ -14,7 +14,6 @@ let find_pos l f =
 
 let strip_instruction_main type_context i =
   let rec strip_instruction i = match Src.(i.instr) with
-    | Src.Print e -> Imp.Print(strip_expression e)
     | Src.Set (loc, e)-> Imp.Set(strip_location loc, strip_expression e)
     | Src.Conditional (e, i1, i2) -> Imp.Conditional(strip_expression e, strip_instruction i1, strip_instruction i2) 
     | Src.Loop (e, i) -> Imp.Loop(strip_expression e, strip_instruction i)

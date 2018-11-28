@@ -27,7 +27,6 @@ type localised_instruction = {
 }
 
 and instruction =
-  | Print         of localised_expression
   | Set           of location * localised_expression
   | Conditional   of localised_expression * localised_instruction * localised_instruction
   | Loop          of localised_expression * localised_instruction
