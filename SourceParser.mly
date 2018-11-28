@@ -4,6 +4,7 @@
   open Lexing
   open CommonAST
   open SourceLocalisedAST
+  open SourceTypeChecker
 
   let symbls = ref [("arg", TypInt)] (* Liste des symboles à ajouter à la table des symboles *)
   let cpt = ref 0
@@ -74,7 +75,7 @@
 	    (instr (make_array (ArrayAccess((expr (Location(loc)) s.e_pos), (expr (Location(Identifier (Id var))) s.e_pos))) typ tail) s.e_pos)
 	   )) s.e_pos))
       end
-
+    
 %}
 
 (* Définition des lexèmes *)
@@ -126,7 +127,7 @@ prog:
      est ajoutée la variable spéciale [arg] (avec le type entier). *)
   { let symbl_table = add_symbls (fst (fst decls)) (!symbls) in
     let pos = $startpos in
-    let i_pos = (pos.pos_lnum, pos.pos_cnum) in 
+    let i_pos = (pos.pos_lnum, pos.pos_cnum) in
     { main = instr (Sequence(instruction_list (snd (fst decls)), instr (ProcedureCall(Id ("main"), [expr (Location(Identifier(Id "arg"))) i_pos])) i_pos)) i_pos;
       globals = symbl_table;
       structs = snd decls;
@@ -153,13 +154,13 @@ decls:
 fun_decl:
 | (* empty *) { Symb_Tbl.empty }
 | t=typ; id=IDENT; LP; fp = formal_params; RP; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
-   { Symb_Tbl.add id ({locals=(fst (fst localsVar)) ;signature={ return=t; formals=fp } ; code=i}) fd }
+   { Symb_Tbl.add (transform_name id (List.rev (List.fold_left (fun acc (n, t) -> t::acc) [] fp))) ({locals=(fst (fst localsVar)) ;signature={ return=t; formals=fp } ; code=i}) fd }
 | id=IDENT; LP; fp = formal_params; RP; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
-   { Symb_Tbl.add id ({locals=(fst (fst localsVar)) ;signature={ return=TypVoid; formals=fp } ; code=i}) fd }
+   { Symb_Tbl.add (transform_name id (List.rev (List.fold_left (fun acc (n, t) -> t::acc) [] fp))) ({locals=(fst (fst localsVar)) ;signature={ return=TypVoid; formals=fp } ; code=i}) fd }
 | MAIN; LP; fp = formal_params; RP; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
-   { Symb_Tbl.add "main" ({locals=(fst (fst localsVar)) ;signature={ return=TypInt; formals=fp } ; code=i}) fd }
+   { Symb_Tbl.add (transform_name "main" [TypInt]) ({locals=(fst (fst localsVar)); signature={ return=TypInt; formals=fp } ; code=i}) fd }
 | MAIN; BEGIN; localsVar=decls; i=localised_complexe_instruction; END; fd=fun_decl
-   { Symb_Tbl.add "main" ({locals=(fst (fst localsVar)) ;signature={ return=TypInt; formals=[("arg",TypInt)] } ; code=i}) fd }
+   { Symb_Tbl.add (transform_name "main" [TypInt]) ({locals=(fst (fst localsVar)); signature={ return=TypInt; formals=[("arg",TypInt)] } ; code=i}) fd }
 ;
     
 (* Déclaration de plusieurs variables sur la meme ligne *)

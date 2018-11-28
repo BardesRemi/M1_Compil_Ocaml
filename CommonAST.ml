@@ -35,3 +35,13 @@ type unaryOp = Minus | Not
 type binaryOp = Add | Sub | Mult | Div | Mod
                 | Eq | Neq | Lt | Le | Gt | Ge
                 | And | Or
+
+let transform_name prev_name params =
+    let rec typ_to_string t = match t with
+      | TypInt -> "int"
+      | TypBool -> "bool"
+      | TypArray(ty) -> "array_of_"^(typ_to_string ty)
+      | TypStruct(name) -> "struct_"^name
+      | TypVoid -> failwith "TypVoid forbidden as function parameter"
+    in
+    List.fold_left (fun acc t -> acc^"_"^(typ_to_string t)) prev_name params 

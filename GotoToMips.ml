@@ -323,7 +323,7 @@ let translate_program program =
 
     (* Fonction prédéfinie *)
     @@ comment "print_int"
-    @@ label "print_int"
+    @@ label "print_int_int"
     @@ push fp
     @@ push ra
     @@ addi fp sp 8
@@ -336,7 +336,7 @@ let translate_program program =
     @@ jr ra
       
     @@ comment "power"
-    @@ label "power"
+    @@ label "power_int_int"
     @@ push fp
     @@ push ra
     @@ addi fp sp 8
@@ -354,7 +354,7 @@ let translate_program program =
     @@ jr ra
 
     @@ comment "print"
-    @@ label "print"
+    @@ label "print_int"
     @@ push fp
     @@ push ra
     @@ addi fp sp 8

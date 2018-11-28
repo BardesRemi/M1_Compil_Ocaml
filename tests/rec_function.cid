@@ -6,7 +6,7 @@ integer fact(integer n) {
   }
 }
 
-main {
+main(integer arg) {
   if (fact(6) == 720) {
     print(79); print(107);
   } else {

@@ -61,6 +61,8 @@ and type_expression context e = match e.expr with
   | NewRecord (name) -> let _ = Symb_Tbl.find name context.struct_types in TypStruct(name)
   | FunCall(Id funName, e_list) ->
      begin
+       let params = List.fold_left (fun acc x -> (type_expression context x)::acc) [] e_list in
+       let funName = transform_name funName params in
        let signature = Symb_Tbl.find funName context.function_signatures in
        let return_typ = signature.return in
        let rec checking_elist_type elist tlist =
@@ -108,9 +110,11 @@ let rec typecheck_instruction context i = match i.instr with
   | Break -> ()
   | Continue -> ()
   | Return(e) -> check_type context i.i_pos e context.return_type
-  | ProcedureCall(Id funName, e_list) ->
+  | ProcedureCall(Id procName, e_list) ->
      begin
-       let signature = Symb_Tbl.find funName context.function_signatures in
+       let params = List.fold_left (fun acc x -> (type_expression context x)::acc) [] e_list in
+       let procName = transform_name procName params in
+       let signature = Symb_Tbl.find procName context.function_signatures in
        let rec checking_elist_type elist tlist =
 	 match elist, tlist with
 	 | [], [] -> ()
@@ -130,9 +134,9 @@ let extract_context p idents f ty = { identifier_types = idents;
 let typecheck_program p =
   let functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k f.signature acc) p.functions Symb_Tbl.empty in 
   let predefined_signatures =
-    Symb_Tbl.add "print_int" { return=TypInt; formals=["x", TypInt] }
-      (Symb_Tbl.add "power" { return=TypInt; formals=["x", TypInt; "n", TypInt] }
-	 (Symb_Tbl.add "print" { return=TypVoid; formals=["x", TypInt] } functions)) in
+    Symb_Tbl.add (transform_name "print_int" [TypInt]) { return=TypInt; formals=["x", TypInt] }
+      (Symb_Tbl.add (transform_name "power" [TypInt; TypInt]) { return=TypInt; formals=["x", TypInt; "n", TypInt] }
+	 (Symb_Tbl.add (transform_name "print" [TypInt]) { return=TypVoid; formals=["x", TypInt] } functions)) in
       
   let type_context = extract_context p p.globals predefined_signatures TypVoid in
   typecheck_instruction type_context p.main;
