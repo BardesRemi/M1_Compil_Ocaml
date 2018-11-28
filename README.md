@@ -1,3 +1,25 @@
+# Rendu numéro 4 - Projet Compilation - Rémi Bardes, Nicolas Devatine
+
+11/09/18 -> 11/28/18
+
+
+## Travail effectué :
+
+### Sujet 4.1 :
+
+* Travail attendu effectué en totalité
+* Extensions : Appel de procédure (Etape A & C), Uniformisation (Etape A & C), surcharge statique (Etape B)
+	             
+### Sujet 4.2 :
+* Travail attendu effectué en totalité
+* Extensions : variables locales dans "main" (inclus par Uniformisation du 4.1)
+
+## Travail entamé mais non fonctionnel : 
+rien à notre connaissance
+
+## Travail emprunté : 
+Aucun
+
 # Rendu numéro 3 - Projet Compilation - Rémi Bardes, Nicolas Devatine
 
 10/11/18 -> 11/07/18
@@ -10,7 +32,7 @@
 * Travail attendu effectué en totalité
 * Extensions : Bornes des tableaux + Tableaux à n dimensions
 	             
-### Sujet 3 .2 :
+### Sujet 3.2 :
 * Travail attendu effectué en totalité
 * Extensions : Entrelacer les déclarations + Champs immuables
 
@@ -34,7 +56,7 @@ Nous avons donc pris la décision de changer la syntaxe du FOR en remplaçant le
 * Travail attendu effectué en totalité
 * Extensions : Messages d'erreur, Commentaires longs, Préprocesseur (Macros constantes, Macros avec arguments, Macros contenant d'autres macros)
 	
-### Sujet 2 .2 :
+### Sujet 2.2 :
 * Travail attendu effectué en totalité
 * Extensions : Sucre syntaxique sauf affectation simultanée (incomplète)
 
