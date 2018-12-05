@@ -25,7 +25,9 @@ let preproc pp =
        
   | false -> c
      
-
+let print_tab t =
+  Array.iter (fun l -> Printf.printf "%s\n" (List.fold_left (fun acc x -> (string_of_int x)^acc) "" l)) t
+  
 let () =
   let c  = preproc !preprocessing in
   let lb = Lexing.from_channel c in
@@ -36,6 +38,9 @@ let () =
   let prog = SourceToImp.strip_program prog prog_type_context  in
   let prog = ImpToGoto.translate_program prog in
   let tempprog = IndexedGotoAST.index_program prog in
+  let test_instr = IndexedGotoAST.index_bloc (GotoAST.Sequence(GotoAST.Nop, GotoAST.Sequence(GotoAST.Nop, GotoAST.Nop))) in
+  let test = IndexedGotoLiveness.mk_succ_table test_instr in
+  print_tab test;
   let prog = IndexedGotoAST.strip_program tempprog in
   let asm = GotoToMips.translate_program prog in
   let output_file = (Filename.chop_suffix file ".cid") ^ ".asm" in

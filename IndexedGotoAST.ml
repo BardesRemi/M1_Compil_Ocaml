@@ -32,16 +32,17 @@ type program = {
 let index_bloc i =
   let cpt = ref (-1) in
   let rec index_instruction_rec i = 
-    let cpt = !cpt + 1 in
+    cpt := !cpt + 1;
+    let c = !cpt in
     match i with
-    | GotoAST.Sequence(i1, i2) -> (cpt, Sequence(index_instruction_rec i1, index_instruction_rec i2))
-    | GotoAST.Set(l, e) -> (cpt, Set(l, e))
-    | GotoAST.Label l -> (cpt, Label(l))
-    | GotoAST.Goto l -> (cpt, Goto(l))
-    | GotoAST.ConditionalGoto(l, e) -> (cpt, ConditionalGoto(l, e))
-    | GotoAST.Return e -> (cpt, Return(e))
-    | GotoAST.ProcedureCall(id, e_list) -> (cpt, ProcedureCall(id, e_list))
-    | GotoAST.Nop -> (cpt, Nop)
+    | GotoAST.Sequence(i1, i2) -> (c, Sequence(index_instruction_rec i1, index_instruction_rec i2))
+    | GotoAST.Set(l, e) -> (c, Set(l, e))
+    | GotoAST.Label l -> (c, Label(l))
+    | GotoAST.Goto l -> (c, Goto(l))
+    | GotoAST.ConditionalGoto(l, e) -> (c, ConditionalGoto(l, e))
+    | GotoAST.Return e -> (c, Return(e))
+    | GotoAST.ProcedureCall(id, e_list) -> (c, ProcedureCall(id, e_list))
+    | GotoAST.Nop -> (c, Nop)
   in
   index_instruction_rec i
 
