@@ -61,9 +61,15 @@ let liveness main_i =
   let li = { live_in = Array.make size [];
 	 live_out = Array.make size [] }
   in
+  @todo faire un fonction qui calcul la table des kill et des Gen
+    ##Gestion des kills :
+    match l'instruction : avec print/goto ==> vide
+                          avec si c'est un set genre x := 2 ==> add {x}::killTabl
+    ##Gestion des Gen :
+    match l'instruction : récuperer les variables "lu" par l'instruction ==> add vars::GenTabl			  
   let rec liveness_rec li i = ...
       begin
-	
+	grace à la table des kills et des Gens, il reste juste a faire les in et Out
       end
   in
   if li = @res liveness_rec li i then li else
