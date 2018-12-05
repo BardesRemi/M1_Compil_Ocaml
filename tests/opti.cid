@@ -1,0 +1,8 @@
+var integer i;
+var integer j;
+
+main {
+  i := 0;
+  j := i + 1;
+  return(i);
+}

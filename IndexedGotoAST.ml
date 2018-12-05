@@ -35,14 +35,14 @@ let index_bloc i =
     cpt := !cpt + 1;
     let c = !cpt in
     match i with
-    | GotoAST.Sequence(i1, i2) -> (c, Sequence(index_instruction_rec i1, index_instruction_rec i2))
-    | GotoAST.Set(l, e) -> (c, Set(l, e))
-    | GotoAST.Label l -> (c, Label(l))
-    | GotoAST.Goto l -> (c, Goto(l))
-    | GotoAST.ConditionalGoto(l, e) -> (c, ConditionalGoto(l, e))
-    | GotoAST.Return e -> (c, Return(e))
-    | GotoAST.ProcedureCall(id, e_list) -> (c, ProcedureCall(id, e_list))
-    | GotoAST.Nop -> (c, Nop)
+    | GotoAST.Sequence(i1, i2) -> ((Printf.printf "Seq %d\n" c); c, Sequence(index_instruction_rec i1, index_instruction_rec i2))
+    | GotoAST.Set(l, e) -> ((Printf.printf "Set %d\n" c);c, Set(l, e))
+    | GotoAST.Label l -> ((Printf.printf "Label %d\n" c);c, Label(l))
+    | GotoAST.Goto l -> ((Printf.printf "Goto %d\n" c);c, Goto(l))
+    | GotoAST.ConditionalGoto(l, e) -> ((Printf.printf "CondGoto %d\n" c);c, ConditionalGoto(l, e))
+    | GotoAST.Return e -> ((Printf.printf "Return %d\n" c);c, Return(e))
+    | GotoAST.ProcedureCall(id, e_list) -> ((Printf.printf "ProcCall %d\n" c);c, ProcedureCall(id, e_list))
+    | GotoAST.Nop -> ((Printf.printf "Nop %d\n" c);c, Nop)
   in
   index_instruction_rec i
 
