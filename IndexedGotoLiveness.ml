@@ -67,17 +67,17 @@ let liveness main_i =
      augmenter le temps de recherche dans le tableaux. *)
   let rec get_expr_labs expr res =
     match expr with
-    |GotoAST.Literal(n)           -> res
-    |GotoAST.Location(loc)        -> get_location_labs loc res
-    |GotoAST.UnaryOp(op, e)       -> get_expr_labs e res
-    |GotoAST.BinaryOp(op, e1, e2) -> get_expr_labs e1 (get_expr_labs e2 res)
-    |GotoAST.NewBlock(e)          -> get_expr_labs e res
-    |GotoAST.FunCall (id, e_list) -> List.fold_left (fun acc x -> (get_expr_labs x acc)) res e_list
+    | GotoAST.Literal(n)           -> res
+    | GotoAST.Location(loc)        -> get_location_labs loc res
+    | GotoAST.UnaryOp(op, e)       -> get_expr_labs e res
+    | GotoAST.BinaryOp(op, e1, e2) -> get_expr_labs e1 (get_expr_labs e2 res)
+    | GotoAST.NewBlock(e)          -> get_expr_labs e res
+    | GotoAST.FunCall (id, e_list) -> List.fold_left (fun acc x -> (get_expr_labs x acc)) res e_list
        
   and get_location_labs loc res =
     match loc with
-    |GotoAST.Identifier(Id id)      -> id::res
-    |GotoAST.BlockAccess (e1,e2)    -> get_expr_labs e1 (get_expr_labs e2 res)
+    | GotoAST.Identifier(Id id)      -> id::res
+    | GotoAST.BlockAccess (e1,e2)    -> get_expr_labs e1 (get_expr_labs e2 res)
   in
   
   let killGen_tbl = Array.make !size { kill_list=[]; gen_list=[] } in
