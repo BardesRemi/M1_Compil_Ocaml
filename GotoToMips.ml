@@ -327,13 +327,13 @@ let translate_program program =
     @@ push fp
     @@ push ra
     @@ addi fp sp 8
-    @@ lw a0 4 sp
+    @@ lw t0 4(fp)
+    @@ move a0 t0
     @@ li v0 1
     @@ syscall
-    @@ move t0 a0
     @@ pop ra
     @@ pop fp
-    @@ jr ra
+    @@ jr ra  
       
     @@ comment "power"
     @@ label "power_int_int"

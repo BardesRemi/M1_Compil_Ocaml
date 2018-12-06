@@ -235,7 +235,8 @@ simple_instruction:
 | l=location; SET; e=localised_expression { Set(l, e) }
 | l=location; SET; NEW; t=typ; a=array_decl { make_array l t a }
 | RETURN; LP; e=localised_expression; RP { Return(e) }
-| id=IDENT; LP; args=arguments; RP { ProcedureCall(Id (id), args) } 
+| id=IDENT; LP; args=arguments; RP { ProcedureCall(Id (id), args) }
+| MAIN; LP; args=arguments; RP { ProcedureCall(Id ("main"), args) }
 ;
 
 complexe_instruction:

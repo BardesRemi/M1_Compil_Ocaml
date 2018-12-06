@@ -35,10 +35,11 @@ let step main_i =
     | cpt, IndexedGotoAST.ProcedureCall(_, _)
     | cpt, IndexedGotoAST.Nop -> i
   in
-  (step_rec main_i, !delete)
+  (!delete, step_rec main_i)
 
 let rec dead_code_elim i =
-  match step i with
-  | (instr, false) -> instr
-  | (instr, true) -> dead_code_elim instr
+  let res = step i in
+  match res with
+  | (false, instr) -> instr
+  | (true, instr) -> dead_code_elim instr
   

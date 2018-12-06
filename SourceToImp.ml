@@ -61,7 +61,11 @@ let strip_program p type_context =
   let main = strip_instruction_main type_context Src.(p.main) in
   let globals = Src.(p.globals) in
   let structs = Src.(p.structs) in
-  let functions = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k Imp.({locals=Src.(f.locals);
-								     signature=Src.(f.signature);
-							             code=strip_instruction_main type_context Src.(f.code)}) acc) Src.(p.functions) (Symb_Tbl.empty) in
+  let functions = Symb_Tbl.fold (fun k f acc ->
+    let ids = List.fold_left (fun acc x -> Symb_Tbl.add (fst x) (snd x) acc) type_context.identifier_types Src.(f.signature.formals) in
+    let ids = Symb_Tbl.fold (fun k f acc -> Symb_Tbl.add k f acc) f.locals ids in
+    let type_context = { type_context with identifier_types = ids; return_type = f.signature.return } in
+    Symb_Tbl.add k Imp.({locals=Src.(f.locals);
+			 signature=Src.(f.signature);
+			 code=strip_instruction_main type_context Src.(f.code)}) acc) Src.(p.functions) (Symb_Tbl.empty) in
   Imp.({ main; globals; structs; functions })

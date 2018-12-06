@@ -1,3 +1,5 @@
+
+
 integer fact(integer n) {
   var integer x;
   var integer z;
@@ -11,15 +13,24 @@ integer fact(integer n) {
 }
 
 main {
+var integer j;
+var integer i;
   /*if (fact(6) == 720) {
     print(79); print(107);
   } else {
     print(75); print(111);
-  };*/
+  };
   var integer u;
   var integer i;
+  var integer j;
+  var integer i;  
   u := 0;
   for(i := 0 , i < 5, i := i+1){
     u := 0+i
-  }
+  }*/
+
+  i := 47;
+  j := i + 1;
+  print_int(i);
+  //return(j);
 }
