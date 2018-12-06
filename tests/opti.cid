@@ -1,8 +1,25 @@
-var integer i;
-var integer j;
+integer fact(integer n) {
+  var integer x;
+  var integer z;
+  var integer w;
+  if (n < 1) {
+    return(1);
+  } else {
+    x := n * fact(n-1);
+    return(x);
+  }
+}
 
 main {
-  i := 0;
-  j := i + 1;
-  return(i);
+  /*if (fact(6) == 720) {
+    print(79); print(107);
+  } else {
+    print(75); print(111);
+  };*/
+  var integer u;
+  var integer i;
+  u := 0;
+  for(i := 0 , i < 5, i := i+1){
+    u := 0+i
+  }
 }

@@ -31,7 +31,7 @@ let mk_succ_table main_i =
     match i_descr with
     | IndexedGoto.Goto(label) -> get_label_succ label main_i; [(!label_succ)]
     | IndexedGoto.ConditionalGoto(label, _) ->
-       if num + 1 > (!array_size - 1) then
+       if num - 1 < 0 then
 	 begin
 	   get_label_succ label main_i;
 	   [(!label_succ)]
@@ -39,9 +39,9 @@ let mk_succ_table main_i =
        else
 	 begin
 	   get_label_succ label main_i;
-	   (!label_succ)::[num + 1]
+	   (!label_succ)::[num - 1]
 	 end
-    | _ -> if num + 1 > (!array_size - 1) then [] else [num + 1]
+    | _ -> if num - 1 < 0 then [] else [num - 1]
   in
   let rec mk_succ_table_rec i =
     match i with
@@ -61,7 +61,10 @@ let liveness main_i =
   let size = ref 0 in
   instr_size main_i size;
   let succs = mk_succ_table main_i in
-  (* concernant ces deux fonctions mutuellement recursives, la liste résultat généré peux contenir des doublons. Ceux-ci augmenterons le temps de recherche future dans le tableau. Cependant on pense qu'il serait plus couteux de supprimer les doublons éventuellement généré que de ne rien faire et légèrement augmenter le temps de recherche dans le tableaux. *)
+  (* Concernant ces deux fonctions mutuellement recursives, la liste résultat généré peux contenir des 
+     doublons. Ceux-ci augmenterons le temps de recherche future dans le tableau. Cependant on pense qu'il 
+     serait plus couteux de supprimer les doublons éventuellement généré que de ne rien faire et légèrement 
+     augmenter le temps de recherche dans le tableaux. *)
   let rec get_expr_labs expr res =
     match expr with
     |GotoAST.Literal(n)           -> res
@@ -70,7 +73,7 @@ let liveness main_i =
     |GotoAST.BinaryOp(op, e1, e2) -> get_expr_labs e1 (get_expr_labs e2 res)
     |GotoAST.NewBlock(e)          -> get_expr_labs e res
     |GotoAST.FunCall (id, e_list) -> List.fold_left (fun acc x -> (get_expr_labs x acc)) res e_list
-
+       
   and get_location_labs loc res =
     match loc with
     |GotoAST.Identifier(Id id)      -> id::res
@@ -96,32 +99,24 @@ let liveness main_i =
        Array.set killGen_tbl cpt { kill_list= []; gen_list= List.fold_left (fun acc x -> get_expr_labs x acc) [] e_list }
   in
   killGen_generator main_i;
-
- 
-  (* TEST PRINT *)
-  Array.fold_left (fun acc x -> Printf.printf "%d Kill " acc; List.iter (fun x -> Printf.printf "%s " x) x.kill_list; Printf.printf " Gen "; List.iter (fun x -> Printf.printf "%s " x) x.gen_list; Printf.printf "\n"; acc + 1) 0 killGen_tbl;
-
   
   let li = { live_in = Array.make !size [];
-	 live_out = Array.make !size [] }
+	     live_out = Array.make !size [] }
   in
 
-  (* toujours la meme histoire concernant les duplicata *)
+  (* Toujours la meme histoire concernant les duplicata *)
   let rec get_out succs res=
     match succs with
     |[]   -> res
     |x::s -> get_out s (List.append (Array.get li.live_in x) res)
   in
-
+  
   let rec get_in cpt out =
     (* Out[p] \ Kill[p] *)
     let t1 = List.filter (fun x -> if (List.exists (fun v -> if x = v then true else false) killGen_tbl.(cpt).kill_list) then false else true ) out in
     (* t1 U Gen[p] *)
     List.append t1 killGen_tbl.(cpt).gen_list
   in
-
-  let turn = ref 0 in
-  
   (* Test l'égalité entre deux liveness_info *)
   let equal_li li1 li2 =
     let res = ref true in
@@ -141,7 +136,6 @@ let liveness main_i =
   in
   
   let rec liveness_rec i =
-    turn := !turn + 1;
     let old_li = { live_in = Array.copy li.live_in;
 		   live_out = Array.copy li.live_out } in
     let rec one_turn_li instr =
@@ -166,7 +160,7 @@ let liveness main_i =
 	 end
     in
     one_turn_li i;
-    if equal_li old_li li then Printf.printf "\nTurn : %d\n" !turn else liveness_rec main_i
+    if equal_li old_li li then () else liveness_rec main_i
   in
   liveness_rec main_i;
   li
