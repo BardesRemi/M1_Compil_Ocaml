@@ -1,3 +1,25 @@
+# Rendu numéro 5 - Projet Compilation - Rémi Bardes, Nicolas Devatine
+
+11/30/18 -> 12/14/18
+
+
+## Travail effectué :
+
+### Sujet 5.1 :
+
+* Travail attendu effectué en totalité
+* Extensions : Aucune
+	             
+### Sujet 5.2 (Optionnel):
+* Travail non réalisé
+* Extensions : Aucune
+
+## Travail entamé mais non fonctionnel : 
+Rien à notre connaissance
+
+## Travail emprunté : 
+Aucun
+
 # Rendu numéro 4 - Projet Compilation - Rémi Bardes, Nicolas Devatine
 
 11/09/18 -> 11/28/18
